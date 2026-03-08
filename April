@@ -3,6 +3,16 @@ local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
+-- 添加 table.find 函数（Lua 原生没有，脚本中多处用到）
+if not table.find then
+    function table.find(t, value)
+        for i, v in ipairs(t) do
+            if v == value then return i end
+        end
+        return nil
+    end
+end
+
 local Options = Library.Options
 local Toggles = Library.Toggles
 
@@ -17,6 +27,7 @@ local Services = {
     Workspace = game:GetService("Workspace"),
     Lighting = game:GetService("Lighting"),
     UserInputService = game:GetService("UserInputService"),
+    VirtualInputManager = game:GetService("VirtualInputManager"),
 }
 
 local LocalPlayer = Services.Players.LocalPlayer
@@ -697,7 +708,8 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local _env = getgenv and getgenv() or {}
-local _hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+-- 移除未使用的 _hrp 变量，避免角色未加载时报错
+-- local _hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 
 local information = Tabs.new:AddRightGroupbox('玩家信息', 'info')
 
@@ -5421,6 +5433,124 @@ Visual:AddCheckbox("ControlChargeToggle", {
         ControlCharge.SetEnabled(state)
     end
 })
+
+-- ===== 新增：自动格挡/出拳功能 =====
+local CombatGroup = Tabs.Bro:AddRightGroupbox("自动格挡/出拳", "shield")
+
+-- 开关状态（使用_G存储，便于跨脚本访问）
+_G.AutoBlock = true
+_G.AutoPunch = true
+_G.CheckStamina = true
+_G.PunchAfterBlock = 0.12
+_G.BlockDelay = 0 -- 未使用，保留
+
+-- 按键（固定）
+local BlockKey = Enum.KeyCode.F
+local PunchKey = Enum.UserInputType.MouseButton1
+
+CombatGroup:AddToggle("AutoBlockToggle", {
+    Text = "自动格挡",
+    Default = true,
+    Callback = function(v)
+        _G.AutoBlock = v
+    end
+})
+
+CombatGroup:AddToggle("AutoPunchToggle", {
+    Text = "自动出拳",
+    Default = true,
+    Callback = function(v)
+        _G.AutoPunch = v
+    end
+})
+
+CombatGroup:AddToggle("StaminaCheckToggle", {
+    Text = "体力检测（不足不格挡）",
+    Default = true,
+    Callback = function(v)
+        _G.CheckStamina = v
+    end
+})
+
+CombatGroup:AddSlider("PunchDelaySlider", {
+    Text = "格挡后出拳延迟 (秒)",
+    Default = 0.12,
+    Min = 0,
+    Max = 0.5,
+    Rounding = 2,
+    Compact = true,
+    Callback = function(v)
+        _G.PunchAfterBlock = v
+    end
+})
+
+-- 核心函数（从第一个脚本移植，并适配服务）
+local function GetStamina()
+    local char = LocalPlayer.Character
+    if not char then return 0 end
+    local stats = char:FindFirstChild("Stats")
+    if not stats then return 0 end
+    local stamina = stats:FindFirstChild("Stamina")
+    return stamina and stamina.Value or 0
+end
+
+local function CanBlock()
+    if not _G.CheckStamina then return true end
+    return GetStamina() >= 12
+end
+
+local function PressBlock()
+    Services.VirtualInputManager:SendKeyEvent(true, BlockKey, false, game)
+    task.wait(0.04)
+    Services.VirtualInputManager:SendKeyEvent(false, BlockKey, false, game)
+end
+
+local function PressPunch()
+    Services.VirtualInputManager:SendMouseButtonEvent(PunchKey, true, false, game)
+    task.wait(0.03)
+    Services.VirtualInputManager:SendMouseButtonEvent(PunchKey, false, false, game)
+end
+
+local function IsEnemyAttacking()
+    local char = LocalPlayer.Character
+    if not char then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+
+    for _, v in pairs(workspace:GetChildren()) do
+        if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v ~= char then
+            local enemyHRP = v.HumanoidRootPart
+            local dist = (hrp.Position - enemyHRP.Position).Magnitude
+            if dist < 11 then
+                local anim = v:FindFirstChild("Anim")
+                if anim and anim:FindFirstChild("Attack") and anim.Attack.Value then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- 主循环
+Services.RunService.Heartbeat:Connect(function()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
+
+    if _G.AutoBlock and IsEnemyAttacking() and CanBlock() then
+        PressBlock()
+        if _G.AutoPunch then
+            task.wait(_G.PunchAfterBlock)
+            PressPunch()
+        end
+        task.wait(0.4)
+    end
+end)
+
+warn("✅ 自动格挡/出拳功能已加载")
+-- ===== 结束新增 =====
 
 -- 环境设置组框（从第一个脚本移植）
 local EnvGroup = Tabs.Esp:AddLeftGroupbox("环境设置", "sun")
