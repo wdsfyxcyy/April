@@ -1,3 +1,68 @@
+-- ==================== 高级卡密验证系统 ====================
+-- 卡密：jrxxlnjpxc（请勿修改）
+-- 服务器接口需返回 JSON：{ "success": true } 或 { "success": false, "message": "原因" }
+
+local CARD = "jrxxlnjpxc"  -- 固定卡密
+local SERVER_URL = "https://your-server.com/api/verify"  -- 请替换为您的服务器地址
+
+-- 获取硬件指纹（基于执行器环境）
+local function get_hwid()
+    local success, id = pcall(function()
+        return game:GetService("RbxAnalyticsService"):GetClientId()
+    end)
+    if success then
+        return id
+    else
+        -- 备选方案：使用玩家ID + 机器名（仅作示例，不够唯一）
+        local playerId = game.Players.LocalPlayer.UserId
+        local computer = syn and syn.crypto and syn.crypto.random(16) or "unknown"
+        return tostring(playerId) .. "_" .. tostring(computer)
+    end
+end
+
+-- 检查当前执行器是否支持 HTTP 请求
+local request = syn and syn.request or http_request or request
+if not request then
+    error("当前执行器不支持HTTP请求，无法验证卡密")
+end
+
+-- 构造请求体
+local http = game:GetService("HttpService")
+local hwid = get_hwid()
+local body = http:JSONEncode({ card = CARD, hwid = hwid })
+
+-- 发送验证请求
+local response = request({
+    Url = SERVER_URL,
+    Method = "POST",
+    Headers = { ["Content-Type"] = "application/json" },
+    Body = body
+})
+
+-- 处理响应
+if response and response.StatusCode == 200 then
+    local data = http:JSONDecode(response.Body)
+    if data.success then
+        print("✅ 卡密验证成功，欢迎使用")
+    else
+        error("❌ 卡密验证失败：" .. (data.message or "未知错误"))
+    end
+else
+    error("❌ 网络错误，无法连接验证服务器，请检查网络或服务器状态")
+end
+
+-- 创建只读授权标记（后续功能可调用 auth() 检查）
+local authorized = true  -- 已通过验证
+local function auth() return authorized end
+
+-- 防止全局修改授权标记（使用闭包隐藏）
+_G.__AUTH__ = setmetatable({}, {
+    __index = function() return auth() end,
+    __newindex = function() error("不允许修改授权状态") end
+})
+-- ==================== 卡密系统结束 ====================
+
+-- 以下为原始脚本内容（功能未作任何改动）
 local repo = "https://raw.githubusercontent.com/San1na/ObsidianRemake/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -2672,7 +2737,7 @@ new:AddButton({
 
 new:AddLabel("双击加载")
 
-new:AddLabel("[+]开发者: 四月")
+new:AddLabel("[+]开发者: 六年级的panxuechen")
 
 -- 原来第一个脚本的亮度、视野等功能已移植到下方的“环境”组框中
 
