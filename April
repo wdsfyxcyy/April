@@ -1,241 +1,3 @@
-local function Message(ConTent, Time)
-    spawn(function()
-        local Message = Instance.new("Message",game:GetService("Workspace"))
-        Message.Text = ConTent
-        wait(Time)
-        Message:Destroy()
-    end)
-end
-
-if not _G.NanTianMen then
-    _G.NanTianMen = true
-    print("NanTianMen Load")
-    Message("Loading, please wait patiently", 5)
-    -- Predefined parts/function parts
-        local _Kick = game:GetService("Players").LocalPlayer.Character.Name.."You are not on the whitelist" -- Kick message
-        local _Script_id = "B"
-        -- Script write 40 lines
-
-        local function kick(text)
-            game:GetService("Players").LocalPlayer:Kick(text)
-            wait(3)
-            game:shutdown()
-            wait(1)
-            kick("(404)")
-            while true do end
-        end
-
-        local function randomString(length)
-            local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456"
-            local name = ""
-            for i = 1, length do
-                local rand = math.random(#chars)
-                name = name .. chars:sub(rand, rand)
-            end
-            return name
-        end
-        
-
-
-        -- Base64
-            local base64 = "S5GHIJOUjPQ63team+EsugAb24qr01lNBRDFn9oZKLTM78wxyz/dVWfXkYChpicv"
-            local function Base64_enc(data) return ((data:gsub('.', function(x) local r,base64='',x:byte() for i=8,1,-1 do r=r..(base64%2^i-base64%2^(i-1)>0 and '1' or '0') end return r; end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x) if (#x < 6) then return '' end local c=0 for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end return base64:sub(c+1,c+1) end)..({ '', '==', '=' })[#data%3+1]) end
-            local function Base64_dec(data) data = string.gsub(data, '[^'..base64..'=]', '') return (data:gsub('.', function(x) if (x == '=') then return '' end local r,f='',(base64:find(x)-1) for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end return r; end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x) if (#x ~= 8) then return '' end local c=0 for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end return string.char(c) end)) end
-
-            local base64 = '7CXv+Esugy2PamteAbKL4hic/Q6VWlIJOUSq3zNBRpfdDFn8xr5GH01oZ9kYjTwM'
-            local function Base64_enc_Args(data) return ((data:gsub('.', function(x) local r,base64='',x:byte() for i=8,1,-1 do r=r..(base64%2^i-base64%2^(i-1)>0 and '1' or '0') end return r; end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x) if (#x < 6) then return '' end local c=0 for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end return base64:sub(c+1,c+1) end)..({ '', '==', '=' })[#data%3+1]) end
-            local function Base64_dec_Args(data) data = string.gsub(data, '[^'..base64..'=]', '') return (data:gsub('.', function(x) if (x == '=') then return '' end local r,f='',(base64:find(x)-1) for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end return r; end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x) if (#x ~= 8) then return '' end local c=0 for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end return string.char(c) end)) end
-
-        -- MD5
-            -- MD5 encryption algorithm Lua implementation (Roblox compatible version)
-            -- Bit operation helper functions (Roblox compatible)
-            local function bit_and(a, b)
-                local result = 0
-                local bit = 1
-                while a > 0 and b > 0 do
-                    if a % 2 == 1 and b % 2 == 1 then
-                        result = result + bit
-                    end
-                    a = math.floor(a / 2)
-                    b = math.floor(b / 2)
-                    bit = bit * 2
-                end
-                return result
-            end
-
-            local function bit_or(a, b)
-                local result = 0
-                local bit = 1
-                while a > 0 or b > 0 do
-                    if a % 2 == 1 or b % 2 == 1 then
-                        result = result + bit
-                    end
-                    a = math.floor(a / 2)
-                    b = math.floor(b / 2)
-                    bit = bit * 2
-                end
-                return result
-            end
-
-            local function bit_xor(a, b)
-                local result = 0
-                local bit = 1
-                while a > 0 or b > 0 do
-                    if a % 2 ~= b % 2 then
-                        result = result + bit
-                    end
-                    a = math.floor(a / 2)
-                    b = math.floor(b / 2)
-                    bit = bit * 2
-                end
-                return result
-            end
-
-            local function bit_not(a)
-                return 0xFFFFFFFF - a
-            end
-
-            local function leftRotate(x, c)
-                x = x % 0x100000000  -- Ensure 32-bit
-                return bit_or((x * (2^c)) % 0x100000000, math.floor(x / (2^(32-c))))
-            end
-
-            -- Constant table
-            local s = {
-                7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
-                5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
-                4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
-                6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
-            }
-
-            local K = {
-                0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
-                0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
-                0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
-                0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
-                0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa,
-                0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
-                0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
-                0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
-                0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c,
-                0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
-                0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05,
-                0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
-                0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039,
-                0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
-                0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
-                0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
-            }
-
-            -- Main function
-            function MD5(message)
-                -- Initial hash values
-                local a0 = 0x67452300
-                local b0 = 0xefcdab89
-                local c0 = 0x98badcfe
-                local d0 = 0x10325476
-                
-                -- Preprocess message
-                local originalLength = #message
-                local originalLengthBits = originalLength * 8
-                
-                -- Add padding bits
-                message = message .. string.char(0x80)
-                while (#message + 8) % 64 ~= 0 do
-                    message = message .. string.char(0x00)
-                end
-                
-                -- Add original length (little-endian)
-                -- Since Roblox Lua doesn't have string.pack, we need to implement manually
-                local lenBytes = {}
-                for i = 1, 8 do
-                    lenBytes[i] = originalLengthBits % 256
-                    originalLengthBits = math.floor(originalLengthBits / 256)
-                end
-                message = message .. string.char(table.unpack(lenBytes))
-                
-                -- Process message chunks
-                for i = 1, #message, 64 do
-                    local chunk = message:sub(i, i + 63)
-                    local M = {}
-                    
-                    -- Divide chunk into 16 32-bit words
-                    for j = 1, 16 do
-                        local word = chunk:sub((j-1)*4 + 1, j*4)
-                        -- Manually parse little-endian 32-bit integer
-                        local a, b, c, d = word:byte(1, 4)
-                        M[j] = a + b * 256 + c * 65536 + d * 16777216
-                    end
-                    
-                    -- Initialize hash values
-                    local A = a0
-                    local B = b0
-                    local C = c0
-                    local D = d0
-                    
-                    -- Main loop
-                    for i = 0, 63 do
-                        local F, g
-                        
-                        if i <= 15 then
-                            F = bit_or(bit_and(B, C), bit_and(bit_not(B), D))
-                            g = i
-                        elseif i <= 31 then
-                            F = bit_or(bit_and(D, B), bit_and(bit_not(D), C))
-                            g = (5 * i + 1) % 16
-                        elseif i <= 47 then
-                            F = bit_xor(bit_xor(B, C), D)
-                            g = (3 * i + 5) % 16
-                        else
-                            F = bit_xor(C, bit_or(B, bit_not(D)))
-                            g = (7 * i) % 16
-                        end
-                        
-                        F = (F + A + K[i+1] + M[g+1]) % 0x100000000
-                        A = D
-                        D = C
-                        C = B
-                        B = (B + leftRotate(F, s[i+1])) % 0x100000000
-                    end
-                    
-                    -- Add to result
-                    a0 = (a0 + A) % 0x100000000
-                    b0 = (b0 + B) % 0x100000000
-                    c0 = (c0 + C) % 0x100000000
-                    d0 = (d0 + D) % 0x100000000
-                end
-                
-                -- Generate final hash value (little-endian)
-                local function toLittleEndian(n)
-                    return string.char(
-                        n % 256,
-                        math.floor(n / 256) % 256,
-                        math.floor(n / 65536) % 256,
-                        math.floor(n / 16777216) % 256
-                    )
-                end
-                
-                local digest = toLittleEndian(a0) .. toLittleEndian(b0) .. toLittleEndian(c0) .. toLittleEndian(d0)
-                
-                -- Convert to hexadecimal string
-                local result = ""
-                for i = 1, #digest do
-                    result = result .. string.format("%02X", digest:byte(i))
-                end
-                
-                return result
-            end
-
-
-
-        local function LoadScript()
-            ----------------------------------------Write script here源码脚本放下面----------------------------------------
-
-
-
-
-
-
 local repo = "https://raw.githubusercontent.com/San1na/ObsidianRemake/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -5546,6 +5308,96 @@ end)
 warn("✅ 自动格挡/出拳功能已加载")
 -- ===== 结束新增 =====
 
+-- ===== 新增：高级格挡设置（来自 LightStar.lua） =====
+local AdvancedBlockGroup = Tabs.Bro:AddRightGroupbox("高级格挡设置", "shield")
+
+-- 初始化配置表
+if not getgenv().AutoBlockConfig then
+    getgenv().AutoBlockConfig = {
+        ShowRadius = false,
+        CircleTransparency = 0.7,
+        FacingCheck = false,
+        PlayerFacingAngle = 90,
+        KillerFacingCheckEnabled = false,
+        KillerFacingAngle = 90,
+    }
+end
+
+-- 定义更新检测圆环的函数（如果后续需要实现，可在这里定义，目前仅为占位）
+if not getgenv().UpdateDetectionCircles then
+    getgenv().UpdateDetectionCircles = function()
+        -- 预留实现
+    end
+end
+
+AdvancedBlockGroup:AddCheckbox("ShowRadius", {
+    Text = "显示格挡半径",
+    Default = getgenv().AutoBlockConfig.ShowRadius,
+    Callback = function(Value)
+        getgenv().AutoBlockConfig.ShowRadius = Value
+        getgenv().UpdateDetectionCircles()
+    end,
+})
+
+AdvancedBlockGroup:AddSlider("CircleTransparency", {
+    Text = "红圈透明度",
+    Default = getgenv().AutoBlockConfig.CircleTransparency,
+    Min = 0,
+    Max = 1,
+    Rounding = 1,
+    Compact = true,
+    Callback = function(Value)
+        getgenv().AutoBlockConfig.CircleTransparency = Value
+    end,
+})
+
+AdvancedBlockGroup:AddLabel("绿色 = 可格挡 红色 = 不可格挡")
+
+AdvancedBlockGroup:AddDivider()
+
+AdvancedBlockGroup:AddCheckbox("AutoBlockFacingCheck", {
+    Text = "玩家面向检测",
+    Default = getgenv().AutoBlockConfig.FacingCheck,
+    Tooltip = "仅在玩家面向杀手时格挡",
+    Callback = function(Value)
+        getgenv().AutoBlockConfig.FacingCheck = Value
+    end,
+})
+
+AdvancedBlockGroup:AddSlider("AutoBlockPlayerFacingAngle", {
+    Text = "玩家面向角度",
+    Default = getgenv().AutoBlockConfig.PlayerFacingAngle,
+    Min = 30,
+    Max = 180,
+    Rounding = 1,
+    Tooltip = "玩家面向杀手的角度检测",
+    Callback = function(Value)
+        getgenv().AutoBlockConfig.PlayerFacingAngle = Value
+    end,
+})
+
+AdvancedBlockGroup:AddCheckbox("AutoBlockKillerFacingCheck", {
+    Text = "杀手面向检测",
+    Default = getgenv().AutoBlockConfig.KillerFacingCheckEnabled,
+    Tooltip = "仅在杀手面向玩家时格挡",
+    Callback = function(Value)
+        getgenv().AutoBlockConfig.KillerFacingCheckEnabled = Value
+    end,
+})
+
+AdvancedBlockGroup:AddSlider("AutoBlockKillerFacingAngle", {
+    Text = "杀手面向角度",
+    Default = getgenv().AutoBlockConfig.KillerFacingAngle,
+    Min = 30,
+    Max = 180,
+    Rounding = 1,
+    Tooltip = "杀手面向玩家的角度检测",
+    Callback = function(Value)
+        getgenv().AutoBlockConfig.KillerFacingAngle = Value
+    end,
+})
+-- ===== 高级格挡设置结束 =====
+
 -- 环境设置组框（从第一个脚本移植）
 local EnvGroup = Tabs.Esp:AddLeftGroupbox("环境设置", "sun")
 local envLightingConnection
@@ -5736,188 +5588,3 @@ local function updateWatermark()
 end
 
 updateWatermark()
-
-
-
-
-
-
-
-
-
-
-
-
-            ----------------------------------------Write script here源码脚本放上面----------------------------------------
-
-        end
-        
-        local function Check_Functions_Is_Hooked(Function)
-            if isfunctionhooked(Function) then
-                kick("[Function][Hooker]")
-            end   
-        end
-
-    -- GUI detection
-        print("2")
-        game.DescendantAdded:Connect(function(Objects)
-            for _,v in {"github", "pastebin", "pythonanywhere"} do
-                if string.find(string.lower(tostring(Objects.Name)), v) or string.find(tostring(Objects.Name), v) then
-                    Objects.Name = "[NanTianMen]"
-                    Objects:Destroy()
-                    kick("Please try again[Hook][21]")
-                end
-
-                if Objects:IsA("TextLabel") or Objects:IsA("TextButton") or Objects:IsA("TextBox") or Objects:IsA("Message") then
-                    if string.find(string.lower(tostring(Objects.Text)), tostring(v)) or string.find(tostring(Objects.Text), tostring(v)) or string.find(tostring(Objects.Text), string.lower(tostring(v))) then
-                        Objects.Text = "[NanTianMen]"
-                        Objects:Destroy()
-                        kick("Please try again[Hook][22]")
-                    end
-                end
-            end
-        end)
-
-
-    -- Network verification & time verification
-        print("3")
-        local Key = request({
-            Url = "https://users.roblox.com/v1/users/"..game:GetService("Players").LocalPlayer.UserId,
-            Method = "GET"
-        }).Body
-        local json = game:GetService("HttpService"):JSONDecode(Key)
-        local time = json.created:split("T")[1]
-        local local_time = os.date("!*t", os.time() - (game:GetService("Players").LocalPlayer.AccountAge*86400))
-
-        local year = local_time.year
-        local month = local_time.month
-        local day = local_time.day
-        if string.len(tostring(month)) == 1 then
-            month = string.format("0%s", month)
-        end
-
-        if string.len(tostring(day)) == 1 then
-            day = string.format("0%s", day)
-        end
-
-        if not (time == string.format("%s-%s-%s", year, month, day)) then
-            if not ((tonumber(local_time.day) - tonumber(day)) < 1 and (tonumber(day) - tonumber(local_time.day)) > -1) then
-                kick("Please try again[1][1]")
-            end
-        end
-
-        if json.displayName ~= game:GetService("Players").LocalPlayer.DisplayName then
-            kick("Please try again[1][2]")
-        end
-
-
-        for _, v in getgc() do
-            if typeof(v) == "function" then
-                Check_Functions_Is_Hooked(v)
-            end
-        end
-        for _, v in getfenv() do
-            if typeof(v) == "function" then
-                Check_Functions_Is_Hooked(v)
-            end
-        end
-        for _, v in getgenv() do
-            if typeof(v) == "function" then
-                Check_Functions_Is_Hooked(v)
-            end
-        end
-
-        local File_Function = {
-            readfile,
-            writefile,
-            appendfile,
-            loadfile,
-            listfiles,
-            isfile,
-            isfolder,
-            makefolder,
-            delfolder,
-            delfile,
-        }
-        for _,v in pairs(File_Function) do
-            if isfunctionhooked(v) then
-                kick("[Function][Hooker]")
-            end
-            local Original_Function = clonefunction(v)
-            hookfunction(v, print)
-            if not isfunctionhooked(v) then
-                kick("[Function][Hooker]")
-            end
-            hookfunction(v, Original_Function)
-        end
-    -- Blacklist
-        print("4")
-        Time = os.time()
-        local Key =  request({Url = "https://nantianmen.pythonanywhere.com/90E231834249308F9155428C7C0E06A9",Method = "POST",Headers = {["Content-Type"] = "application/json"},
-        Body = game:GetService("HttpService"):JSONEncode({
-            [randomString(math.random(50))] = Base64_enc(randomString(math.random(50))),
-            ["username"] = Base64_enc(randomString(math.random(50)) .. tostring(Time*30) .. "|" .. game:GetService("Players").LocalPlayer.Character.Name),
-            ["Time"] = Base64_enc(tostring(Time*250)),
-            ["Check"] = Base64_enc(randomString(math.random(50)) .. tostring(Time*666) .. "|" .. MD5(Base64_enc(tostring(Time*30) .. "|" .. game:GetService("Players").LocalPlayer.Character.Name)..Base64_enc(tostring(Time*250)) )),
-        })})
-        local Content = Base64_dec(Key.Body)
-        local Key = string.split(Content, "|")
-        if (Key[1])-Time>30 or (Key[1])-Time<-30 then
-            kick("[Black]Time verification failed")
-        end
-        if MD5('By NanTianMen_Content:' .. game:GetService("Players").LocalPlayer.Character.Name .. ' True') == Key[2] then 
-            kick("[NanTianMen]You have been added to the blacklist")
-        end
-
-    -- Load script & basic verification
-        print("5")
-
-
-        if game:GetService("Players").LocalPlayer.Name == game:GetService("Players").LocalPlayer.Character.Name and game:GetService("Players").LocalPlayer.CharacterAppearanceId == game:GetService("Players").LocalPlayer.UserId and game:GetService("Players"):GetUserIdFromNameAsync(game:GetService("Players").LocalPlayer.Name) == game:GetService("Players").LocalPlayer.UserId then
-            Time = os.time()
-            local Key =  request({Url = "https://nantianmen.pythonanywhere.com/6F1C5EB044796E5224D24B2373F5544B",Method = "POST",Headers = {["Content-Type"] = "application/json"},
-            Body = game:GetService("HttpService"):JSONEncode({
-                [randomString(math.random(50))] = Base64_enc(randomString(math.random(50))),
-                ["script_id"] = Base64_enc(randomString(math.random(50)) .. tostring(Time*20) .. "|" .. _Script_id),
-                ["username"] = Base64_enc(randomString(math.random(50)) .. tostring(Time*30) .. "|" .. game:GetService("Players").LocalPlayer.Character.Name),
-                ["Time"] = Base64_enc(tostring(Time*250)),
-                ["Check"] = Base64_enc(randomString(math.random(50)) .. tostring(Time*666) .. "|" .. MD5(Base64_enc(tostring(Time*20) .. "|" .. _Script_id)..Base64_enc(game:GetService("Players").LocalPlayer.Character.Name) .. Base64_enc(tostring(Time*250))    )  ),
-            })})
-            local Content = Base64_dec(Key.Body)
-            local Key = string.split(Content, "|")
-            if (Key[1])-Time>30 or (Key[1])-Time<-30 then
-                print("Time verification failed")
-            end
-            if MD5('By NanTianMen_Content:' .. game:GetService("Players").LocalPlayer.Character.Name .. ' True') == Key[2] then -- 1
-                LoadScript()
-            else
-                Time = os.time()
-                local Key =  request({Url = "https://nantianmen.pythonanywhere.com/6F1C5EB044796E5224D24B2373F5544B",Method = "POST",Headers = {["Content-Type"] = "application/json"},
-                Body = game:GetService("HttpService"):JSONEncode({
-                    [randomString(math.random(50))] = Base64_enc(randomString(math.random(50))),
-                    ["script_id"] = Base64_enc(randomString(math.random(50)) .. tostring(Time*20) .. "|" .. _Script_id),
-                    ["username"] = Base64_enc(randomString(math.random(50)) .. tostring(Time*30) .. "|" .. game:GetService("Players").LocalPlayer.Character.Name),
-                    ["Time"] = Base64_enc(tostring(Time*250)),
-                    ["Check"] = Base64_enc(randomString(math.random(50)) .. tostring(Time*666) .. "|" .. MD5(Base64_enc(tostring(Time*20) .. "|" .. _Script_id)..Base64_enc(game:GetService("Players").LocalPlayer.Character.Name) .. Base64_enc(tostring(Time*250))    )  ),
-                })})
-                local Content = Base64_dec(Key.Body)
-                local Key = string.split(Content, "|")
-                if (Key[1])-Time>30 or (Key[1])-Time<-30 then
-                    print("Time verification failed")
-                end
-                if MD5('By NanTianMen_Content:' .. game:GetService("Players").LocalPlayer.Character.Name .. ' True') == Key[2] then -- 2
-                    LoadScript()
-                else
-                    game:GetService("Players").LocalPlayer:Kick(_Kick)
-                    wait(3)
-                    game:shutdown()
-                    wait(1)
-                    while true do end
-                end
-            end
-        else
-            kick("Please try again[3][3]")
-        end
-else
-    Message("Do not reload", 3)
-end
