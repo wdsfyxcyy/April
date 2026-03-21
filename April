@@ -5190,124 +5190,6 @@ Visual:AddCheckbox("ControlChargeToggle", {
     end
 })
 
--- ===== 新增：自动格挡/出拳功能 =====
-local CombatGroup = Tabs.Bro:AddRightGroupbox("自动格挡/出拳", "shield")
-
--- 开关状态（使用_G存储，便于跨脚本访问）
-_G.AutoBlock = true
-_G.AutoPunch = true
-_G.CheckStamina = true
-_G.PunchAfterBlock = 0.12
-_G.BlockDelay = 0 -- 未使用，保留
-
--- 按键（固定）
-local BlockKey = Enum.KeyCode.F
-local PunchKey = Enum.UserInputType.MouseButton1
-
-CombatGroup:AddToggle("AutoBlockToggle", {
-    Text = "自动格挡",
-    Default = true,
-    Callback = function(v)
-        _G.AutoBlock = v
-    end
-})
-
-CombatGroup:AddToggle("AutoPunchToggle", {
-    Text = "自动出拳",
-    Default = true,
-    Callback = function(v)
-        _G.AutoPunch = v
-    end
-})
-
-CombatGroup:AddToggle("StaminaCheckToggle", {
-    Text = "体力检测（不足不格挡）",
-    Default = true,
-    Callback = function(v)
-        _G.CheckStamina = v
-    end
-})
-
-CombatGroup:AddSlider("PunchDelaySlider", {
-    Text = "格挡后出拳延迟 (秒)",
-    Default = 0.12,
-    Min = 0,
-    Max = 0.5,
-    Rounding = 2,
-    Compact = true,
-    Callback = function(v)
-        _G.PunchAfterBlock = v
-    end
-})
-
--- 核心函数（从第一个脚本移植，并适配服务）
-local function GetStamina()
-    local char = LocalPlayer.Character
-    if not char then return 0 end
-    local stats = char:FindFirstChild("Stats")
-    if not stats then return 0 end
-    local stamina = stats:FindFirstChild("Stamina")
-    return stamina and stamina.Value or 0
-end
-
-local function CanBlock()
-    if not _G.CheckStamina then return true end
-    return GetStamina() >= 12
-end
-
-local function PressBlock()
-    Services.VirtualInputManager:SendKeyEvent(true, BlockKey, false, game)
-    task.wait(0.04)
-    Services.VirtualInputManager:SendKeyEvent(false, BlockKey, false, game)
-end
-
-local function PressPunch()
-    Services.VirtualInputManager:SendMouseButtonEvent(PunchKey, true, false, game)
-    task.wait(0.03)
-    Services.VirtualInputManager:SendMouseButtonEvent(PunchKey, false, false, game)
-end
-
-local function IsEnemyAttacking()
-    local char = LocalPlayer.Character
-    if not char then return false end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-
-    for _, v in pairs(workspace:GetChildren()) do
-        if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v ~= char then
-            local enemyHRP = v.HumanoidRootPart
-            local dist = (hrp.Position - enemyHRP.Position).Magnitude
-            if dist < 11 then
-                local anim = v:FindFirstChild("Anim")
-                if anim and anim:FindFirstChild("Attack") and anim.Attack.Value then
-                    return true
-                end
-            end
-        end
-    end
-    return false
-end
-
--- 主循环
-Services.RunService.Heartbeat:Connect(function()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local humanoid = char:FindFirstChild("Humanoid")
-    if not humanoid or humanoid.Health <= 0 then return end
-
-    if _G.AutoBlock and IsEnemyAttacking() and CanBlock() then
-        PressBlock()
-        if _G.AutoPunch then
-            task.wait(_G.PunchAfterBlock)
-            PressPunch()
-        end
-        task.wait(0.4)
-    end
-end)
-
-warn("✅ 自动格挡/出拳功能已加载")
--- ===== 结束新增 =====
-
 -- ===== 新增：高级格挡设置（来自 LightStar.lua） =====
 local AdvancedBlockGroup = Tabs.Bro:AddRightGroupbox("高级格挡设置", "shield")
 
@@ -5590,10 +5472,10 @@ end
 updateWatermark()
 
 -- =============================================================================
--- 新增：被遗弃杀手 - 攻击碰撞箱追踪与扩大系统（整合版）
+-- 修复版：被遗弃杀手 - 攻击碰撞箱追踪与扩大系统
 -- =============================================================================
 
--- 配置表（可随时通过UI调整）
+-- 配置表（可动态调整）
 if not _G.KillerTrackingConfig then
     _G.KillerTrackingConfig = {
         Enabled = false,               -- 是否启用追踪攻击
@@ -5610,88 +5492,92 @@ if not _G.KillerTrackingConfig then
     }
 end
 
--- 为方便UI修改，绑定全局变量
 local KTC = _G.KillerTrackingConfig
+local RemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
 
--- 获取本地玩家的杀手身份（根据角色名称判断，可按需扩展）
+-- 杀手名称列表（根据游戏实际情况扩展）
 local KillerNames = {"Slasher", "c00lkidd", "JohnDoe", "1x1x1x1", "Noli", "Sixer", "Nosferatu"}
 
+-- 判断本地玩家是否为杀手
 local function IsLocalPlayerKiller()
     local char = LocalPlayer.Character
     if not char then return false end
-    local name = char.Name
-    for _, killerName in ipairs(KillerNames) do
-        if name == killerName then return true end
-    end
-    -- 也可通过属性判断（部分角色名可能不同）
-    if char:GetAttribute("ActorDisplayName") then
-        local actor = char:GetAttribute("ActorDisplayName")
-        for _, killerName in ipairs(KillerNames) do
-            if actor == killerName then return true end
-        end
-    end
-    return false
+    if table.find(KillerNames, char.Name) then return true end
+    local actor = char:GetAttribute("ActorDisplayName")
+    return actor and table.find(KillerNames, actor) ~= nil
 end
 
--- 获取幸存者文件夹中的有效玩家（距离在范围内）
+-- 获取幸存者文件夹中的所有有效玩家（距离范围内）
 local function GetNearestSurvivor()
     local char = LocalPlayer.Character
     if not char then return nil end
-    local rootPart = char:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return nil end
-    
-    local survivorsFolder = Services.Workspace:FindFirstChild("Players") and Services.Workspace.Players:FindFirstChild("Survivors")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+
+    local survivorsFolder = Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Survivors")
     if not survivorsFolder then return nil end
-    
-    local nearest = nil
-    local shortestDist = math.huge
-    
+
+    local bestTarget, bestDist = nil, math.huge
     for _, survivor in ipairs(survivorsFolder:GetChildren()) do
-        if survivor:IsA("Model") and survivor ~= char then
+        if survivor:IsA("Model") then
             local targetRoot = survivor:FindFirstChild("HumanoidRootPart")
-            local targetHumanoid = survivor:FindFirstChildOfClass("Humanoid")
-            if targetRoot and targetHumanoid and targetHumanoid.Health > 0 then
-                local dist = (rootPart.Position - targetRoot.Position).Magnitude
-                if dist >= KTC.MinRange and dist <= KTC.MaxRange and dist < shortestDist then
-                    shortestDist = dist
-                    nearest = survivor
+            local humanoid = survivor:FindFirstChildOfClass("Humanoid")
+            if targetRoot and humanoid and humanoid.Health > 0 then
+                local dist = (root.Position - targetRoot.Position).Magnitude
+                if dist >= KTC.MinRange and dist <= KTC.MaxRange and dist < bestDist then
+                    bestTarget, bestDist = survivor, dist
                 end
             end
         end
     end
-    return nearest, shortestDist
+    return bestTarget, bestDist
 end
 
 -- 根据距离计算碰撞箱大小（线性插值）
 local function GetSizeByDistance(distance)
-    local t = (distance - KTC.MinRange) / (KTC.MaxRange - KTC.MinRange)
-    t = math.clamp(t, 0, 1)
+    local t = math.clamp((distance - KTC.MinRange) / (KTC.MaxRange - KTC.MinRange), 0, 1)
     local x = KTC.MinSize.X + (KTC.MaxSize.X - KTC.MinSize.X) * t
     local y = KTC.MinSize.Y + (KTC.MaxSize.Y - KTC.MinSize.Y) * t
     local z = KTC.MinSize.Z + (KTC.MaxSize.Z - KTC.MinSize.Z) * t
     return Vector3.new(x, y, z)
 end
 
--- 对目标幸存者执行一次攻击（创建追踪碰撞箱）
+-- 发送伤害请求（通过游戏远程事件）
+local function SendDamage(targetCharacter, damage)
+    if not targetCharacter or not targetCharacter:IsA("Model") then return end
+    -- 根据游戏的实际伤害远程事件格式构造参数
+    -- 此处以通用格式为例，可能需要调整
+    local args = {
+        buffer.fromstring("\3\4\0\0\0Damage"),  -- 常见攻击事件标识
+        targetCharacter,                         -- 目标角色
+        damage                                    -- 伤害值
+    }
+    pcall(function()
+        RemoteEvent:FireServer(unpack(args))
+    end)
+end
+
+-- 执行一次攻击（创建追踪碰撞箱）
 local function PerformAttack(targetSurvivor)
     if not targetSurvivor then return end
-    
-    local targetChar = targetSurvivor
-    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-    local targetHumanoid = targetChar:FindFirstChildOfClass("Humanoid")
+
+    local targetRoot = targetSurvivor:FindFirstChild("HumanoidRootPart")
+    local targetHumanoid = targetSurvivor:FindFirstChildOfClass("Humanoid")
     if not targetRoot or not targetHumanoid or targetHumanoid.Health <= 0 then return end
-    
+
     local myChar = LocalPlayer.Character
     if not myChar then return end
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     if not myRoot then return end
-    
-    -- 再次验证距离范围
+
+    -- 再次验证距离
     local currentDist = (myRoot.Position - targetRoot.Position).Magnitude
-    if currentDist < KTC.MinRange or currentDist > KTC.MaxRange then
-        return
-    end
-    
+    if currentDist < KTC.MinRange or currentDist > KTC.MaxRange then return end
+
     -- 创建碰撞箱 Part
     local hitbox = Instance.new("Part")
     hitbox.Size = GetSizeByDistance(currentDist)
@@ -5702,66 +5588,64 @@ local function PerformAttack(targetSurvivor)
     hitbox.Color = KTC.HitboxColor
     hitbox.Material = Enum.Material.Neon
     hitbox.Name = "KillerTrackingHitbox"
-    hitbox.Parent = workspace
-    
-    local hasDamaged = false
+    hitbox.Parent = Workspace
+
+    local damaged = false
     local startTime = tick()
-    
-    -- 碰撞检测
-    local function onTouch(otherPart)
-        if hasDamaged then return end
-        local character = otherPart:FindFirstAncestorOfClass("Model")
-        if character == targetChar then
-            if targetHumanoid.Health > 0 then
-                targetHumanoid:TakeDamage(KTC.Damage)
-                hasDamaged = true
-                hitbox:Destroy()
-            end
+
+    -- 触摸检测
+    local function onTouch(part)
+        if damaged then return end
+        local hitChar = part:FindFirstAncestorOfClass("Model")
+        if hitChar == targetSurvivor then
+            damaged = true
+            SendDamage(targetSurvivor, KTC.Damage)
+            hitbox:Destroy()
         end
     end
     hitbox.Touched:Connect(onTouch)
-    
-    -- 更新循环：每帧追踪目标并调整大小
+
+    -- 追踪更新循环
     local connection
-    connection = Services.RunService.Heartbeat:Connect(function()
-        if not targetChar or not targetHumanoid or targetHumanoid.Health <= 0 then
-            if hitbox then hitbox:Destroy() end
+    connection = RunService.Heartbeat:Connect(function()
+        -- 目标是否仍然有效
+        if not targetSurvivor.Parent or not targetHumanoid or targetHumanoid.Health <= 0 then
+            hitbox:Destroy()
             connection:Disconnect()
             return
         end
-        
-        local newRoot = targetChar:FindFirstChild("HumanoidRootPart")
+        -- 获取目标新位置
+        local newRoot = targetSurvivor:FindFirstChild("HumanoidRootPart")
         if not newRoot then
-            if hitbox then hitbox:Destroy() end
+            hitbox:Destroy()
             connection:Disconnect()
             return
         end
-        
+        -- 检查距离是否超出范围
         local newDist = (myRoot.Position - newRoot.Position).Magnitude
         if newDist > KTC.MaxRange + 10 or newDist < KTC.MinRange - 5 then
-            if hitbox then hitbox:Destroy() end
+            hitbox:Destroy()
             connection:Disconnect()
             return
         end
-        
+        -- 超时销毁
         if tick() - startTime > KTC.AttackDuration then
-            if hitbox then hitbox:Destroy() end
+            hitbox:Destroy()
             connection:Disconnect()
             return
         end
-        
+        -- 更新碰撞箱位置和大小
         hitbox.CFrame = newRoot.CFrame
         hitbox.Size = GetSizeByDistance(newDist)
     end)
 end
 
--- 主循环：当玩家是杀手且功能启用时，自动攻击最近的幸存者
+-- 主循环（自动攻击）
 local TrackingLoop = nil
 local function StartTrackingLoop()
     if TrackingLoop then return end
     TrackingLoop = task.spawn(function()
         while KTC.Enabled do
-            -- 只有玩家是杀手时才执行
             if IsLocalPlayerKiller() then
                 local target = GetNearestSurvivor()
                 if target then
@@ -5778,9 +5662,8 @@ local function StartTrackingLoop()
     end)
 end
 
--- UI 控件：在“战斗”选项卡中添加新的组框
+-- UI 控件（保持原样）
 local KillerTrackingGroup = Tabs.Bro:AddRightGroupbox("杀手追踪攻击", "skull")
-
 KillerTrackingGroup:AddToggle("KillerTrackingToggle", {
     Text = "启用追踪攻击",
     Default = false,
@@ -5796,117 +5679,88 @@ KillerTrackingGroup:AddToggle("KillerTrackingToggle", {
         end
     end,
 })
-
 KillerTrackingGroup:AddSlider("KillerTrackingCooldown", {
     Text = "攻击冷却 (秒)",
     Default = KTC.AttackCooldown,
     Min = 0.5,
     Max = 10,
     Rounding = 1,
-    Callback = function(v)
-        KTC.AttackCooldown = v
-    end,
+    Callback = function(v) KTC.AttackCooldown = v end,
 })
-
 KillerTrackingGroup:AddSlider("KillerTrackingDuration", {
     Text = "碰撞箱持续时间 (秒)",
     Default = KTC.AttackDuration,
     Min = 0.5,
     Max = 5,
     Rounding = 1,
-    Callback = function(v)
-        KTC.AttackDuration = v
-    end,
+    Callback = function(v) KTC.AttackDuration = v end,
 })
-
 KillerTrackingGroup:AddSlider("KillerTrackingMinRange", {
     Text = "最小追踪距离 (米)",
     Default = KTC.MinRange,
     Min = 5,
     Max = 50,
     Rounding = 1,
-    Callback = function(v)
-        KTC.MinRange = v
-    end,
+    Callback = function(v) KTC.MinRange = v end,
 })
-
 KillerTrackingGroup:AddSlider("KillerTrackingMaxRange", {
     Text = "最大追踪距离 (米)",
     Default = KTC.MaxRange,
     Min = 20,
     Max = 150,
     Rounding = 1,
-    Callback = function(v)
-        KTC.MaxRange = v
-    end,
+    Callback = function(v) KTC.MaxRange = v end,
 })
-
 KillerTrackingGroup:AddSlider("KillerTrackingDamage", {
     Text = "伤害值",
     Default = KTC.Damage,
     Min = 10,
     Max = 100,
     Rounding = 1,
-    Callback = function(v)
-        KTC.Damage = v
-    end,
+    Callback = function(v) KTC.Damage = v end,
 })
-
 KillerTrackingGroup:AddSlider("KillerTrackingMinSize", {
     Text = "最小碰撞箱大小",
     Default = KTC.MinSize.X,
     Min = 1,
     Max = 10,
     Rounding = 1,
-    Callback = function(v)
-        KTC.MinSize = Vector3.new(v, v, v)
-    end,
+    Callback = function(v) KTC.MinSize = Vector3.new(v, v, v) end,
 })
-
 KillerTrackingGroup:AddSlider("KillerTrackingMaxSize", {
     Text = "最大碰撞箱大小",
     Default = KTC.MaxSize.X,
     Min = 5,
     Max = 20,
     Rounding = 1,
-    Callback = function(v)
-        KTC.MaxSize = Vector3.new(v, v, v)
-    end,
+    Callback = function(v) KTC.MaxSize = Vector3.new(v, v, v) end,
 })
-
 KillerTrackingGroup:AddCheckbox("KillerTrackingShowHitbox", {
     Text = "显示碰撞箱（调试）",
     Default = true,
-    Callback = function(v)
-        KTC.ShowHitbox = v
-    end,
+    Callback = function(v) KTC.ShowHitbox = v end,
 })
-
 KillerTrackingGroup:AddColorPicker("KillerTrackingColor", {
     Text = "碰撞箱颜色",
     Default = KTC.HitboxColor,
-    Callback = function(c)
-        KTC.HitboxColor = c
-    end,
+    Callback = function(c) KTC.HitboxColor = c end,
 })
 
-warn("✅ 杀手追踪攻击功能已加载")
+warn("✅ 修复版杀手追踪攻击功能已加载")
 
 -- =============================================================================
--- 新增：披萨追踪系统（整合自用户提供的追踪脚本）
+-- 新增：披萨追踪系统 - 精确追踪血量最少的幸存者，距离10~200米
 -- =============================================================================
 
--- 配置表
+-- 配置表（已根据需求调整默认值）
 if not _G.PizzaTrackingConfig then
     _G.PizzaTrackingConfig = {
         Enabled = false,            -- 是否启用
         Speed = 80,                 -- 追踪速度 (studs/s)
         Damage = 25,               -- 命中伤害
-        MinDistMeters = 10,        -- 最小追踪距离 (米)
-        MaxDistMeters = 2000,      -- 最大追踪距离 (米)
+        MinDistMeters = 10,        -- 最小追踪距离 (米) - 硬性要求10米
+        MaxDistMeters = 200,       -- 最大追踪距离 (米) - 硬性要求200米
         Lifetime = 10,             -- 最大飞行时间 (秒)
-        TrackHealth = true,        -- 优先追踪血量最少的目标
-        TrackNearest = false,      -- 若血量最少失效，则追踪最近目标（预留）
     }
 end
 
@@ -5917,96 +5771,95 @@ local function MetersToStuds(m)
     return m / 0.28
 end
 
--- 生成追踪脚本的内容（字符串形式，将在披萨上作为 LocalScript 运行）
+-- 生成追踪脚本的内容（LocalScript，将在每个披萨上运行）
 local function GetTrackingScriptContent()
-    -- 注意：此脚本将在每个披萨的 LocalScript 中运行，需要访问 _G.PizzaTrackingConfig 配置
+    -- 注意：此脚本将在客户端运行，所有配置从 _G.PizzaTrackingConfig 读取
     return [[
         local pizza = script.Parent
         local runService = game:GetService("RunService")
         local players = game:GetService("Players")
+        local workspace = game:GetService("Workspace")
         
-        -- 从全局配置读取参数（若不存在则使用默认值）
+        -- 从全局配置读取参数
         local config = _G.PizzaTrackingConfig or {}
         local SPEED = config.Speed or 80
         local DAMAGE = config.Damage or 25
-        local MIN_DIST = (config.MinDistMeters or 10) / 0.28
-        local MAX_DIST = (config.MaxDistMeters or 2000) / 0.28
+        local MIN_DIST_METERS = config.MinDistMeters or 10
+        local MAX_DIST_METERS = config.MaxDistMeters or 200
         local LIFETIME = config.Lifetime or 10
         
-        -- 获取发射者（假设披萨由本地玩家抛出）
-        local thrower = game.Players.LocalPlayer
+        -- 转换为 studs（游戏内距离单位）
+        local MIN_DIST = MIN_DIST_METERS / 0.28
+        local MAX_DIST = MAX_DIST_METERS / 0.28
+        
+        -- 获取发射者（本地玩家）
+        local thrower = players.LocalPlayer
         local throwerCharacter = thrower and thrower.Character
         
-        -- 添加 BodyVelocity 组件
+        -- 添加 BodyVelocity 驱动披萨飞行
         local bodyVel = Instance.new("BodyVelocity")
         bodyVel.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-        bodyVel.Velocity = pizza.AssemblyLinearVelocity  -- 使用披萨的当前速度作为初速
+        bodyVel.Velocity = pizza.AssemblyLinearVelocity
         bodyVel.Parent = pizza
         
-        -- 获取所有有效敌人（排除发射者自己）
-        local function getValidEnemies()
-            local enemies = {}
-            for _, player in ipairs(players:GetPlayers()) do
-                if player == thrower then continue end
-                local character = player.Character
-                if not character then continue end
-                local humanoid = character:FindFirstChild("Humanoid")
-                if humanoid and humanoid.Health > 0 then
-                    table.insert(enemies, character)
-                end
-            end
-            -- 可选：添加 NPC 敌人（若游戏有）
-            for _, enemy in ipairs(workspace:GetChildren()) do
-                if enemy:IsA("Model") and enemy:HasTag("Enemy") then
-                    local humanoid = enemy:FindFirstChild("Humanoid")
-                    if humanoid and humanoid.Health > 0 and enemy ~= throwerCharacter then
-                        table.insert(enemies, enemy)
+        -- 获取所有有效幸存者（仅追踪幸存者，不追踪杀手）
+        local function getValidSurvivors()
+            local survivors = {}
+            local survivorsFolder = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild("Survivors")
+            if not survivorsFolder then return survivors end
+            
+            for _, obj in ipairs(survivorsFolder:GetChildren()) do
+                if obj:IsA("Model") then
+                    local humanoid = obj:FindFirstChild("Humanoid")
+                    if humanoid and humanoid.Health > 0 then
+                        table.insert(survivors, obj)
                     end
                 end
             end
-            return enemies
+            return survivors
         end
         
-        -- 选择最佳目标（血量最少，且在距离范围内）
+        -- 选择血量最少的幸存者（且在距离范围内）
         local function selectTarget()
             local bestTarget = nil
             local bestHealth = math.huge
             local pizzaPos = pizza.Position
-            local enemies = getValidEnemies()
-            for _, enemy in ipairs(enemies) do
-                local humanoid = enemy:FindFirstChild("Humanoid")
+            local survivors = getValidSurvivors()
+            
+            for _, survivor in ipairs(survivors) do
+                local humanoid = survivor:FindFirstChild("Humanoid")
                 if not humanoid or humanoid.Health <= 0 then continue end
-                local targetPos = enemy:GetPivot().Position
+                
+                local targetPos = survivor:GetPivot().Position
                 local dist = (targetPos - pizzaPos).Magnitude
-                if dist < MIN_DIST or dist > MAX_DIST then continue end
-                local health = humanoid.Health
-                if health < bestHealth then
-                    bestHealth = health
-                    bestTarget = enemy
-                elseif health == bestHealth and bestTarget then
-                    local bestDist = (bestTarget:GetPivot().Position - pizzaPos).Magnitude
-                    if dist < bestDist then
-                        bestTarget = enemy
+                
+                -- 只在距离范围内考虑
+                if dist >= MIN_DIST and dist <= MAX_DIST then
+                    local health = humanoid.Health
+                    if health < bestHealth then
+                        bestHealth = health
+                        bestTarget = survivor
                     end
                 end
             end
             return bestTarget
         end
         
-        -- 命中处理
+        -- 命中处理：对幸存者造成伤害
         local function onHit(hit)
             if not pizza.Parent then return end
-            local humanoid = hit.Parent:FindFirstChild("Humanoid")
-            if not humanoid then
-                humanoid = hit.Parent:FindFirstChildWhichIsA("Humanoid")
-            end
+            
+            local hitCharacter = hit:FindFirstAncestorOfClass("Model")
+            if not hitCharacter then return end
+            
+            local humanoid = hitCharacter:FindFirstChild("Humanoid")
             if humanoid and humanoid.Health > 0 then
-                local hitCharacter = humanoid.Parent
-                if hitCharacter == throwerCharacter then return end
-                -- 客户端造成伤害（需要通过远程事件发送给服务器，这里简化处理）
-                -- 实际游戏中可能需要 FireServer 来造成伤害，此处使用 TakeDamage 可能无效
-                -- 但为了演示，保留原逻辑
-                pcall(function() humanoid:TakeDamage(DAMAGE) end)
+                -- 确认目标是幸存者
+                local survivorsFolder = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild("Survivors")
+                if survivorsFolder and hitCharacter:IsDescendantOf(survivorsFolder) then
+                    -- 客户端造成伤害（实际游戏中可能需要远程事件，但 TakeDamage 有时也可工作）
+                    pcall(function() humanoid:TakeDamage(DAMAGE) end)
+                end
             end
             pizza:Destroy()
         end
@@ -6016,12 +5869,14 @@ local function GetTrackingScriptContent()
         -- 追踪主循环
         local startTime = tick()
         local currentTarget = nil
+        
         runService.Heartbeat:Connect(function()
             if tick() - startTime > LIFETIME then
                 pizza:Destroy()
                 return
             end
             if not pizza.Parent then return end
+            
             currentTarget = selectTarget()
             if currentTarget then
                 local targetPos = currentTarget:GetPivot().Position
@@ -6029,34 +5884,28 @@ local function GetTrackingScriptContent()
                 bodyVel.Velocity = direction * SPEED
             end
         end)
-        
-        task.wait(0.1)  -- 初始延迟
     ]]
 end
 
 -- 为披萨添加追踪脚本
 local function AddTrackingToPizza(pizzaPart)
-    -- 检查是否已添加
-    if pizzaPart:FindFirstChild("PizzaTrackingScript") then
-        return
-    end
+    if not PTC.Enabled then return end
+    if pizzaPart:FindFirstChild("PizzaTrackingScript") then return end
     
-    -- 创建 LocalScript
     local script = Instance.new("LocalScript")
     script.Name = "PizzaTrackingScript"
     script.Source = GetTrackingScriptContent()
     script.Parent = pizzaPart
     
-    -- 可选：设置属性以便调试
     pizzaPart:SetAttribute("Tracked", true)
 end
 
--- 监控披萨生成
+-- 监控披萨生成并自动添加追踪功能
 local pizzaMonitorConnection = nil
 local function StartPizzaMonitoring()
     if pizzaMonitorConnection then return end
     
-    -- 已有披萨
+    -- 为已存在的披萨添加追踪
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name == "Pizza" then
             AddTrackingToPizza(obj)
@@ -6076,10 +5925,10 @@ local function StopPizzaMonitoring()
         pizzaMonitorConnection:Disconnect()
         pizzaMonitorConnection = nil
     end
-    -- 可选：移除已存在的追踪脚本（但一般保留，关闭功能后不再添加新披萨）
+    -- 不主动移除已有的追踪脚本，避免影响现有披萨
 end
 
--- UI 部分：在战斗选项卡中添加披萨追踪组框
+-- UI 控件：在战斗选项卡添加“披萨追踪”组
 local PizzaTrackingGroup = Tabs.Bro:AddRightGroupbox("披萨追踪", "pizza")
 
 PizzaTrackingGroup:AddToggle("PizzaTrackingToggle", {
@@ -6101,9 +5950,7 @@ PizzaTrackingGroup:AddSlider("PizzaTrackingSpeed", {
     Min = 10,
     Max = 200,
     Rounding = 1,
-    Callback = function(v)
-        PTC.Speed = v
-    end,
+    Callback = function(v) PTC.Speed = v end,
 })
 
 PizzaTrackingGroup:AddSlider("PizzaTrackingDamage", {
@@ -6112,31 +5959,25 @@ PizzaTrackingGroup:AddSlider("PizzaTrackingDamage", {
     Min = 5,
     Max = 100,
     Rounding = 1,
-    Callback = function(v)
-        PTC.Damage = v
-    end,
+    Callback = function(v) PTC.Damage = v end,
 })
 
 PizzaTrackingGroup:AddSlider("PizzaTrackingMinDist", {
     Text = "最小追踪距离 (米)",
     Default = PTC.MinDistMeters,
     Min = 5,
-    Max = 50,
+    Max = 30,
     Rounding = 1,
-    Callback = function(v)
-        PTC.MinDistMeters = v
-    end,
+    Callback = function(v) PTC.MinDistMeters = v end,
 })
 
 PizzaTrackingGroup:AddSlider("PizzaTrackingMaxDist", {
     Text = "最大追踪距离 (米)",
     Default = PTC.MaxDistMeters,
     Min = 50,
-    Max = 2000,
+    Max = 500,
     Rounding = 1,
-    Callback = function(v)
-        PTC.MaxDistMeters = v
-    end,
+    Callback = function(v) PTC.MaxDistMeters = v end,
 })
 
 PizzaTrackingGroup:AddSlider("PizzaTrackingLifetime", {
@@ -6145,9 +5986,7 @@ PizzaTrackingGroup:AddSlider("PizzaTrackingLifetime", {
     Min = 1,
     Max = 30,
     Rounding = 1,
-    Callback = function(v)
-        PTC.Lifetime = v
-    end,
+    Callback = function(v) PTC.Lifetime = v end,
 })
 
-warn("✅ 披萨追踪功能已加载")
+warn("✅ 披萨追踪功能已加载（精准追踪血量最少幸存者，距离10~200米）")
