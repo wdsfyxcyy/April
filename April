@@ -13,6 +13,283 @@ if not table.find then
     end
 end
 
+-- ========== 启动动画系统 ==========
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- 创建全屏启动动画 GUI
+local splashGui = Instance.new("ScreenGui")
+splashGui.Name = "AprilSplashScreen"
+splashGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+splashGui.IgnoreGuiInset = true
+splashGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- 背景 (深色渐变)
+local background = Instance.new("Frame")
+background.Size = UDim2.new(1, 0, 1, 0)
+background.BackgroundColor3 = Color3.fromRGB(3, 6, 23)
+background.Parent = splashGui
+
+-- 径向渐变效果（用 ImageLabel 模拟）
+local gradientOverlay = Instance.new("ImageLabel")
+gradientOverlay.Size = UDim2.new(1, 0, 1, 0)
+gradientOverlay.BackgroundTransparency = 1
+gradientOverlay.Image = "rbxassetid://194179753" -- 模糊渐变
+gradientOverlay.ImageColor3 = Color3.fromRGB(15, 25, 55)
+gradientOverlay.ImageTransparency = 0.6
+gradientOverlay.Parent = background
+
+-- 主内容框
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(0, 360, 0, 320)
+contentFrame.Position = UDim2.new(0.5, -180, 0.5, -160)
+contentFrame.BackgroundTransparency = 0.6
+contentFrame.BackgroundColor3 = Color3.fromRGB(20, 30, 55)
+contentFrame.BorderSizePixel = 0
+contentFrame.ClipsDescendants = true
+contentFrame.Parent = background
+-- 圆角
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 32)
+corner.Parent = contentFrame
+
+-- 光晕边框
+local border = Instance.new("Frame")
+border.Size = UDim2.new(1, 0, 1, 0)
+border.BackgroundTransparency = 1
+border.BorderSizePixel = 2
+border.BorderColor3 = Color3.fromRGB(80, 120, 200)
+border.Parent = contentFrame
+local borderCorner = Instance.new("UICorner")
+borderCorner.CornerRadius = UDim.new(0, 32)
+borderCorner.Parent = border
+
+-- 旋转环容器
+local spinner = Instance.new("Frame")
+spinner.Size = UDim2.new(0, 100, 0, 100)
+spinner.Position = UDim2.new(0.5, -50, 0, 40)
+spinner.BackgroundTransparency = 1
+spinner.Parent = contentFrame
+
+-- 外环
+local outerRing = Instance.new("ImageLabel")
+outerRing.Size = UDim2.new(1, 0, 1, 0)
+outerRing.BackgroundTransparency = 1
+outerRing.Image = "rbxassetid://155039343" -- 圆环纹理
+outerRing.ImageColor3 = Color3.fromRGB(59, 130, 246)
+outerRing.Parent = spinner
+
+-- 内环
+local innerRing = Instance.new("ImageLabel")
+innerRing.Size = UDim2.new(0.7, 0, 0.7, 0)
+innerRing.Position = UDim2.new(0.15, 0, 0.15, 0)
+innerRing.BackgroundTransparency = 1
+innerRing.Image = "rbxassetid://155039343"
+innerRing.ImageColor3 = Color3.fromRGB(236, 72, 153)
+innerRing.Parent = spinner
+
+-- 中心标志
+local logo = Instance.new("TextLabel")
+logo.Size = UDim2.new(1, 0, 1, 0)
+logo.BackgroundTransparency = 1
+logo.Text = "✦"
+logo.TextColor3 = Color3.fromRGB(255, 255, 255)
+logo.TextSize = 48
+logo.Font = Enum.Font.GothamBold
+logo.Parent = spinner
+
+-- 标语
+local tagline = Instance.new("TextLabel")
+tagline.Size = UDim2.new(1, 0, 0, 30)
+tagline.Position = UDim2.new(0, 0, 0, 150)
+tagline.BackgroundTransparency = 1
+tagline.Text = "CREATIVE STUDIO"
+tagline.TextColor3 = Color3.fromRGB(185, 208, 255)
+tagline.TextSize = 14
+tagline.Font = Enum.Font.GothamMedium
+tagline.Parent = contentFrame
+
+-- 进度条文本
+local progressText = Instance.new("TextLabel")
+progressText.Size = UDim2.new(1, 0, 0, 24)
+progressText.Position = UDim2.new(0, 0, 0, 195)
+progressText.BackgroundTransparency = 1
+progressText.Text = "0%"
+progressText.TextColor3 = Color3.fromRGB(200, 220, 255)
+progressText.TextSize = 18
+progressText.Font = Enum.Font.GothamBold
+progressText.TextScaled = true
+progressText.Parent = contentFrame
+
+-- 进度条背景
+local progressBg = Instance.new("Frame")
+progressBg.Size = UDim2.new(0.8, 0, 0, 8)
+progressBg.Position = UDim2.new(0.1, 0, 0, 230)
+progressBg.BackgroundColor3 = Color3.fromRGB(40, 50, 80)
+progressBg.BorderSizePixel = 0
+progressBg.Parent = contentFrame
+local bgCorner = Instance.new("UICorner")
+bgCorner.CornerRadius = UDim.new(1, 0)
+bgCorner.Parent = progressBg
+
+-- 进度条填充
+local progressFill = Instance.new("Frame")
+progressFill.Size = UDim2.new(0, 0, 1, 0)
+progressFill.BackgroundColor3 = Color3.fromRGB(59, 130, 246)
+progressFill.BorderSizePixel = 0
+progressFill.Parent = progressBg
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(1, 0)
+fillCorner.Parent = progressFill
+
+-- 跳过按钮
+local skipBtn = Instance.new("TextButton")
+skipBtn.Size = UDim2.new(0, 100, 0, 32)
+skipBtn.Position = UDim2.new(0.5, -50, 0, 260)
+skipBtn.BackgroundTransparency = 0.8
+skipBtn.BackgroundColor3 = Color3.fromRGB(80, 100, 140)
+skipBtn.Text = "跳过动画 →"
+skipBtn.TextColor3 = Color3.fromRGB(200, 220, 255)
+skipBtn.TextSize = 14
+skipBtn.Font = Enum.Font.GothamMedium
+skipBtn.Parent = contentFrame
+local skipCorner = Instance.new("UICorner")
+skipCorner.CornerRadius = UDim.new(1, 0)
+skipCorner.Parent = skipBtn
+
+-- 底部小字
+local footer = Instance.new("TextLabel")
+footer.Size = UDim2.new(1, 0, 0, 20)
+footer.Position = UDim2.new(0, 0, 1, -30)
+footer.BackgroundTransparency = 1
+footer.Text = "正在加载奇幻体验"
+footer.TextColor3 = Color3.fromRGB(148, 169, 212)
+footer.TextSize = 11
+footer.Font = Enum.Font.Gotham
+footer.Parent = contentFrame
+
+-- 动画变量
+local DURATION = 2.2 -- 秒
+local startTime = os.clock()
+local tweenConnection = nil
+local finished = false
+
+-- 更新进度条
+local function updateProgress(percent)
+    local width = progressBg.AbsoluteSize.X * percent
+    progressFill:TweenSize(UDim2.new(percent, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.05)
+    progressText.Text = math.floor(percent * 100) .. "%"
+end
+
+-- 旋转动画
+local spinTween = TweenService:Create(outerRing, TweenInfo.new(1.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1, true), {Rotation = 360})
+spinTween:Play()
+local spinTween2 = TweenService:Create(innerRing, TweenInfo.new(1.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 1, true), {Rotation = -360})
+spinTween2:Play()
+
+-- 结束动画并显示主界面
+local function finishSplash()
+    if finished then return end
+    finished = true
+    if tweenConnection then tweenConnection:Disconnect() end
+
+    -- 淡出启动界面
+    local fadeOut = TweenService:Create(splashGui, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1})
+    fadeOut:Play()
+    fadeOut.Completed:Wait()
+    splashGui:Destroy()
+
+    -- 现在创建主窗口（原脚本的 Library 窗口）
+    -- 注意：原脚本中的窗口创建代码原本是直接执行的，我们需要在这里调用
+    -- 为避免重复，我们将原脚本中从 local Window = Library:CreateWindow 开始的所有 UI 代码放在一个函数里，动画结束后调用。
+    -- 由于原脚本非常长，为了保持可读性，我将原脚本的窗口构建部分整体移动到此处，并保证变量不冲突。
+    -- 这里直接调用一个全局函数来构建 UI（稍后定义）
+    if type(createMainUI) == "function" then
+        createMainUI()
+    else
+        warn("Main UI creation function not found")
+    end
+end
+
+-- 跳过按钮事件
+skipBtn.MouseButton1Click:Connect(finishSplash)
+
+-- 进度条自动增长（基于时间）
+local function updateLoop()
+    local elapsed = os.clock() - startTime
+    local progress = math.min(1, elapsed / DURATION)
+    -- 缓动 easeOutCubic
+    local eased = 1 - (1 - progress)^3
+    updateProgress(eased)
+    if progress >= 1 then
+        finishSplash()
+    else
+        task.wait(0.016)
+        updateLoop()
+    end
+end
+task.spawn(updateLoop)
+
+-- ========== 原脚本 UI 部分（移动到函数中，在动画结束后执行） ==========
+function createMainUI()
+    -- 原脚本的全局变量需要保留
+    getgenv().HookRules = getgenv().HookRules or {}
+    
+    local Services = {
+        Players = game:GetService("Players"),
+        RunService = game:GetService("RunService"),
+        Workspace = game:GetService("Workspace"),
+        Lighting = game:GetService("Lighting"),
+        UserInputService = game:GetService("UserInputService"),
+        VirtualInputManager = game:GetService("VirtualInputManager"),
+    }
+    
+    local LocalPlayer = Services.Players.LocalPlayer
+    local Camera = Services.Workspace.CurrentCamera
+    local UIS = Services.UserInputService
+    
+    local ESPSettings = {
+        killerESP = false,
+        playerESP = false,
+        generatorESP = false,
+        itemESP = false,
+        pizzaEsp = false,
+        pizzaDeliveryEsp = false,
+        zombieEsp = false,
+        taphTripwireEsp = false,
+        tripMineEsp = false,
+        twoTimeRespawnEsp = false,
+        killerTracers = false,
+        survivorTracers = false,
+        generatorTracers = false,
+        itemTracers = false,
+        pizzaTracers = false,
+        pizzaDeliveryTracers = false,
+        zombieTracers = false,
+        killerSkinESP = false,
+        survivorSkinESP = false,
+        killerFillTransparency = 0.7,
+        killerOutlineTransparency = 0.3,
+        survivorFillTransparency = 0.7,
+        survivorOutlineTransparency = 0.3,
+        killerColor = Color3.fromRGB(255, 100, 100),
+        survivorColor = Color3.fromRGB(100, 255, 100),
+        generatorColor = Color3.fromRGB(255, 100, 255),
+        itemColor = Color3.fromRGB(100, 200, 255),
+        pizzaColor = Color3.fromRGB(255, 200, 0),
+        pizzaDeliveryColor = Color3.fromRGB(255, 150, 0),
+        zombieColor = Color3.fromRGB(0, 255, 0),
+        tripwireColor = Color3.fromRGB(255, 0, 0),
+        tripMineColor = Color3.fromRGB(255, 50, 50),
+        respawnColor = Color3.fromRGB(0, 255, 255),
+    }
+    
+    local DummyNames = {
+        "PizzaDeliveryRig", "Mafiaso1", "Mafiaso2", "Builderman", "Elliot",
+        "ShedletskyCORRUPT", "ChancecORRUPT", "ChanceCORRUPT", "Mafia1", "Mafia2",
+    }
+    
 local Options = Library.Options
 local Toggles = Library.Toggles
 
