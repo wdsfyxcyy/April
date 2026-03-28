@@ -5456,3 +5456,296 @@ local TracerData = {}
     end
 
     updateWatermark()
+
+-- ==================== 来宾1337战斗系统 ====================
+-- 在战斗标签中添加左侧组框
+local Guest1337Group = Tabs.Bro:AddLeftGroupbox("来宾1337战斗系统", "shield")
+
+-- 配置参数
+local guestSettings = {
+    autoBlockEnabled = true,
+    autoAttackEnabled = true,
+    blockDistance = 3.0,       -- 1~7
+    blockAngle = 120,          -- 1~180
+    aimDistance = 0.5,         -- 0.1~1
+    showDebugEffects = true,
+}
+
+-- 冷却时间
+local BLOCK_COOLDOWN = 0.5
+local ATTACK_COOLDOWN = 0.6
+
+-- 状态变量
+local guestCharacter = nil
+local guestHumanoid = nil
+local guestRootPart = nil
+local lastBlockTime = 0
+local lastAttackTime = 0
+local effectsFolder = nil
+local sphereParts = {}
+local cubeParts = {}
+local effectOffsets = { spheres = {}, cubes = {} }
+
+-- 判断是否为敌人（适配《被遗弃》的阵营结构）
+local function IsEnemy(targetChar)
+    if not targetChar or targetChar == guestCharacter then return false end
+    local hum = targetChar:FindFirstChild("Humanoid")
+    if not hum or hum.Health <= 0 then return false end
+    local targetPlayer = Players:GetPlayerFromCharacter(targetChar)
+    if targetPlayer and targetPlayer ~= LocalPlayer then return true end
+    if targetChar:FindFirstChild("IsKiller") then return true end
+    return false
+end
+
+-- 获取最近敌人
+local function GetNearestEnemy()
+    if not guestRootPart then return nil, nil, nil end
+    local nearest, minDist = nil, math.huge
+    local myPos = guestRootPart.Position
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            if char and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+                local targetRoot = char:FindFirstChild("HumanoidRootPart")
+                if targetRoot then
+                    local dist = (targetRoot.Position - myPos).Magnitude
+                    if dist < minDist then
+                        minDist = dist
+                        nearest = char
+                    end
+                end
+            end
+        end
+    end
+    return nearest, minDist
+end
+
+-- 检查格挡条件（距离+角度）
+local function IsEnemyInBlockRange(enemyChar, enemyRootPos)
+    if not guestRootPart or not enemyRootPos then return false end
+    local dist = (enemyRootPos - guestRootPart.Position).Magnitude
+    if dist > guestSettings.blockDistance then return false end
+    local forward = guestRootPart.CFrame.LookVector
+    local toEnemy = (enemyRootPos - guestRootPart.Position).Unit
+    local angle = math.deg(math.acos(math.clamp(forward:Dot(toEnemy), -1, 1)))
+    return angle <= guestSettings.blockAngle / 2
+end
+
+-- 执行格挡（发送远程事件）
+local function PerformBlock()
+    local remote = ReplicatedStorage:FindFirstChild("Modules")
+    if remote then
+        remote = remote:FindFirstChild("Network")
+        if remote then
+            remote = remote:FindFirstChild("RemoteEvent")
+            if remote then
+                remote:FireServer("Block")  -- 根据游戏实际事件名调整
+            end
+        end
+    end
+end
+
+-- 执行攻击（发送远程事件）
+local function PerformAttack(targetChar)
+    local remote = ReplicatedStorage:FindFirstChild("Modules")
+    if remote then
+        remote = remote:FindFirstChild("Network")
+        if remote then
+            remote = remote:FindFirstChild("RemoteEvent")
+            if remote then
+                remote:FireServer("Attack", targetChar)  -- 根据游戏实际事件名调整
+            end
+        end
+    end
+end
+
+-- 自动格挡检测
+local function AutoBlockCheck()
+    if not guestSettings.autoBlockEnabled then return end
+    if not guestCharacter or not guestHumanoid or guestHumanoid.Health <= 0 then return end
+    local now = tick()
+    if now - lastBlockTime < BLOCK_COOLDOWN then return end
+    local nearest, dist = GetNearestEnemy()
+    if nearest and dist <= guestSettings.blockDistance then
+        local enemyRoot = nearest:FindFirstChild("HumanoidRootPart")
+        if enemyRoot and IsEnemyInBlockRange(nearest, enemyRoot.Position) then
+            lastBlockTime = now
+            PerformBlock()
+        end
+    end
+end
+
+-- 自动出拳检测
+local function AutoAttackCheck()
+    if not guestSettings.autoAttackEnabled then return end
+    if not guestCharacter or not guestHumanoid or guestHumanoid.Health <= 0 then return end
+    local now = tick()
+    if now - lastAttackTime < ATTACK_COOLDOWN then return end
+    local nearest, dist = GetNearestEnemy()
+    if nearest and dist <= guestSettings.aimDistance then
+        lastAttackTime = now
+        PerformAttack(nearest)
+    end
+end
+
+-- ========== 调试特效 ==========
+local function CreateEffectParts()
+    if effectsFolder then effectsFolder:Destroy() end
+    effectsFolder = Instance.new("Folder")
+    effectsFolder.Name = "Guest1337DebugEffects"
+    effectsFolder.Parent = guestCharacter or workspace
+
+    for i = 1, 12 do
+        local sphere = Instance.new("Part")
+        sphere.Shape = Enum.PartType.Ball
+        sphere.Size = Vector3.new(0.4, 0.4, 0.4)
+        sphere.BrickColor = BrickColor.new("Bright red")
+        sphere.Material = Enum.Material.Neon
+        sphere.Anchored = true
+        sphere.CanCollide = false
+        sphere.Transparency = 0.4
+        sphere.Parent = effectsFolder
+        table.insert(sphereParts, sphere)
+    end
+    for i = 1, 20 do
+        local cube = Instance.new("Part")
+        cube.Shape = Enum.PartType.Block
+        cube.Size = Vector3.new(0.3, 0.3, 0.3)
+        cube.BrickColor = BrickColor.new("Bright blue")
+        cube.Material = Enum.Material.Neon
+        cube.Anchored = true
+        cube.CanCollide = false
+        cube.Transparency = 0.4
+        cube.Parent = effectsFolder
+        table.insert(cubeParts, cube)
+    end
+end
+
+local function RecalculateEffectOffsets(radius)
+    effectOffsets.spheres = {}
+    effectOffsets.cubes = {}
+    for i = 1, 12 do
+        local angle = (i - 1) * (2 * math.pi / 12)
+        effectOffsets.spheres[i] = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+    end
+    for i = 1, 20 do
+        local angle = (i - 1) * (2 * math.pi / 20)
+        effectOffsets.cubes[i] = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+    end
+end
+
+local function UpdateEffectsPosition()
+    if not guestSettings.showDebugEffects or not effectsFolder or not guestRootPart then
+        if effectsFolder then effectsFolder.Enabled = false end
+        return
+    end
+    effectsFolder.Enabled = true
+    local center = guestRootPart.Position + Vector3.new(0, 1, 0)
+    for i, sphere in ipairs(sphereParts) do
+        sphere.CFrame = CFrame.new(center + (effectOffsets.spheres[i] or Vector3.zero))
+    end
+    for i, cube in ipairs(cubeParts) do
+        cube.CFrame = CFrame.new(center + (effectOffsets.cubes[i] or Vector3.zero))
+    end
+end
+
+local function SetDebugEffectsVisible(visible)
+    guestSettings.showDebugEffects = visible
+    if effectsFolder then effectsFolder.Enabled = visible end
+end
+
+-- 角色相关事件
+local function OnGuestCharacterAdded(newChar)
+    guestCharacter = newChar
+    guestHumanoid = newChar:WaitForChild("Humanoid")
+    guestRootPart = newChar:WaitForChild("HumanoidRootPart")
+    CreateEffectParts()
+    RecalculateEffectOffsets(guestSettings.blockDistance)
+    SetDebugEffectsVisible(guestSettings.showDebugEffects)
+end
+
+local function OnGuestCharacterRemoving()
+    if effectsFolder then effectsFolder:Destroy() end
+    sphereParts = {}
+    cubeParts = {}
+    guestCharacter = nil
+    guestHumanoid = nil
+    guestRootPart = nil
+end
+
+LocalPlayer.CharacterAdded:Connect(OnGuestCharacterAdded)
+LocalPlayer.CharacterRemoving:Connect(OnGuestCharacterRemoving)
+if LocalPlayer.Character then OnGuestCharacterAdded(LocalPlayer.Character) end
+
+-- 添加自动战斗循环到现有心跳
+RunService.Heartbeat:Connect(function()
+    if not guestCharacter or not guestHumanoid or guestHumanoid.Health <= 0 then return end
+    UpdateEffectsPosition()
+    AutoBlockCheck()
+    AutoAttackCheck()
+end)
+
+-- ========== UI控件（使用Library） ==========
+Guest1337Group:AddToggle("AutoBlockToggle", {
+    Text = "自动格挡",
+    Default = guestSettings.autoBlockEnabled,
+    Callback = function(state)
+        guestSettings.autoBlockEnabled = state
+    end,
+})
+
+Guest1337Group:AddSlider("BlockDistanceSlider", {
+    Text = "格挡距离",
+    Default = guestSettings.blockDistance,
+    Min = 1,
+    Max = 7,
+    Rounding = 1,
+    Suffix = "米",
+    Callback = function(val)
+        guestSettings.blockDistance = val
+        RecalculateEffectOffsets(val)
+    end,
+})
+
+Guest1337Group:AddSlider("BlockAngleSlider", {
+    Text = "格挡角度",
+    Default = guestSettings.blockAngle,
+    Min = 1,
+    Max = 180,
+    Rounding = 1,
+    Suffix = "度",
+    Callback = function(val)
+        guestSettings.blockAngle = val
+    end,
+})
+
+Guest1337Group:AddToggle("AutoAttackToggle", {
+    Text = "自动出拳",
+    Default = guestSettings.autoAttackEnabled,
+    Callback = function(state)
+        guestSettings.autoAttackEnabled = state
+    end,
+})
+
+Guest1337Group:AddSlider("AimDistanceSlider", {
+    Text = "自瞄距离",
+    Default = guestSettings.aimDistance,
+    Min = 0.1,
+    Max = 1,
+    Rounding = 2,
+    Suffix = "米",
+    Callback = function(val)
+        guestSettings.aimDistance = val
+    end,
+})
+
+Guest1337Group:AddToggle("ShowDebugEffects", {
+    Text = "显示调试特效",
+    Default = guestSettings.showDebugEffects,
+    Callback = function(state)
+        SetDebugEffectsVisible(state)
+    end,
+})
+
+Guest1337Group:AddLabel("红色球体: 12个 | 蓝色方块: 20个")
+Guest1337Group:AddLabel("特效半径随格挡距离动态变化")
