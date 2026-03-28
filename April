@@ -13,7 +13,7 @@ if not table.find then
     end
 end
 
--- ========== 原脚本 UI 部分（移动到函数中，在动画结束后执行） ==========
+-- ========== 原脚本 UI 部分 ==========
 function createMainUI()
     -- 原脚本的全局变量需要保留
     getgenv().HookRules = getgenv().HookRules or {}
@@ -5824,3 +5824,6 @@ function createMainUI()
 
     updateWatermark()
 end
+
+-- 直接调用主界面函数
+createMainUI()
