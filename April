@@ -9,741 +9,132 @@ Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
 Library.NotifySide = "Right"
 
-getgenv().HookRules = getgenv().HookRules or {}
+local Window = Library:CreateWindow({
+    Title = 'April   RAYSAKEN',
+    Footer = 'AprilSAKEN｜AprilTEAM',
+    Icon = 114671656594043,
+    Center = true,
+    AutoShow = true,
+    Resizable = true,
+    ShowCustomCursor = true,
+    NotifySide = "Right",
+    TabPadding = 8,
+    MenuFadeTime = 0
+})
 
-local Services = {
-    Players = game:GetService("Players"),
-    RunService = game:GetService("RunService"),
-    Workspace = game:GetService("Workspace"),
+local Tabs = {
+    Info = Window:AddTab('信息', 'person-standing'),
+    Loader = Window:AddTab('加载', 'download'),
+    UISettings = Window:AddTab('UI设置', 'settings')
 }
 
-local LocalPlayer = Services.Players.LocalPlayer
-local Camera = Services.Workspace.CurrentCamera
+-- 信息标签页
+local infoGroup = Tabs.Info:AddRightGroupbox('玩家信息', 'info')
+infoGroup:AddLabel("执行器 : " .. identifyexecutor())
+infoGroup:AddLabel("用户名 : " .. game.Players.LocalPlayer.Name)
+infoGroup:AddLabel("用户ID : " .. game.Players.LocalPlayer.UserId)
+infoGroup:AddLabel("昵称 : " .. game.Players.LocalPlayer.DisplayName)
+infoGroup:AddLabel("账号年龄 : " .. game.Players.LocalPlayer.AccountAge .. " 天")
 
-local ESPSettings = {
-    killerESP = false,
-    playerESP = false,
-    generatorESP = false,
-    itemESP = false,
-    pizzaEsp = false,
-    pizzaDeliveryEsp = false,
-    zombieEsp = false,
-    taphTripwireEsp = false,
-    tripMineEsp = false,
-    twoTimeRespawnEsp = false,
-    killerTracers = false,
-    survivorTracers = false,
-    generatorTracers = false,
-    itemTracers = false,
-    pizzaTracers = false,
-    pizzaDeliveryTracers = false,
-    zombieTracers = false,
-    killerSkinESP = false,
-    survivorSkinESP = false,
-    killerFillTransparency = 0.7,
-    killerOutlineTransparency = 0.3,
-    survivorFillTransparency = 0.7,
-    survivorOutlineTransparency = 0.3,
-    killerColor = Color3.fromRGB(255, 100, 100),
-    survivorColor = Color3.fromRGB(100, 255, 100),
-    generatorColor = Color3.fromRGB(255, 100, 255),
-    itemColor = Color3.fromRGB(100, 200, 255),
-    pizzaColor = Color3.fromRGB(255, 200, 0),
-    pizzaDeliveryColor = Color3.fromRGB(255, 150, 0),
-    zombieColor = Color3.fromRGB(0, 255, 0),
-    tripwireColor = Color3.fromRGB(255, 0, 0),
-    tripMineColor = Color3.fromRGB(255, 50, 50),
-    respawnColor = Color3.fromRGB(0, 255, 255),
-}
+-- 加载二级脚本标签页
+local loaderGroup = Tabs.Loader:AddLeftGroupbox('April加载')
+loaderGroup:AddButton({
+    Text = "加载二级脚本",
+    Func = function()
+        -- 此处可替换为你需要的二级脚本链接，当前为空脚本示例
+        loadstring([[
+            -- 二级脚本内容（可自行替换为实际脚本链接）
+            print("二级脚本已加载，但无任何游戏功能。")
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "April",
+                Text = "二级脚本加载成功，当前无功能",
+                Duration = 3
+            })
+        ]])()
+    end,
+    DoubleClick = true,
+    Tooltip = "加载",
+    DisabledTooltip = "已禁用！",
+    Disabled = false,
+    Visible = true,
+    Risky = false,
+})
+loaderGroup:AddLabel("双击加载")
+loaderGroup:AddLabel("[+]开发者: 四月")
 
-local DummyNames = {
-    "PizzaDeliveryRig", "Mafiaso1", "Mafiaso2", "Builderman", "Elliot",
-    "ShedletskyCORRUPT", "ChancecORRUPT", "ChanceCORRUPT", "Mafia1", "Mafia2",
-}
+-- UI设置标签页
+local menuGroup = Tabs.UISettings:AddLeftGroupbox("调试")
+menuGroup:AddToggle("KeybindMenuOpen", {
+    Default = Library.KeybindFrame.Visible,  
+    Text = "快捷键菜单",
+    Callback = function(value)
+        Library.KeybindFrame.Visible = value  
+    end,
+})
+menuGroup:AddToggle("ShowCustomCursor", {
+    Text = "鼠标光标",
+    Default = true,  
+    Callback = function(Value)
+        Library.ShowCustomCursor = Value  
+    end,
+})
+menuGroup:AddDropdown("NotificationSide", {
+    Values = { "左侧", "右侧" },
+    Default = "右侧",  
+    Text = "通知位置",
+    Callback = function(Value)
+        Library:SetNotifySide(Value)  
+    end,
+})
+menuGroup:AddDropdown("DPIDropdown", {
+    Values = { "25%", "50%", "75%", "100%", "125%", "150%", "175%", "200%" },
+    Default = "75%",  
+    Text = "UI大小",
+    Callback = function(Value)
+        Value = Value:gsub("%%", "")  
+        local DPI = tonumber(Value)   
+        Library:SetDPIScale(DPI)      
+    end,
+})
+menuGroup:AddDivider()  
+menuGroup:AddLabel("菜单绑定")  
+    :AddKeyPicker("MenuKeybind", { 
+        Default = "RightShift",  
+        NoUI = true,            
+        Text = "菜单键"    
+    })
+menuGroup:AddButton("销毁UI", function()
+    Library:Unload()  
+end)
 
-local PlayerESPData = {}
-local ObjectESPData = {}
-local TracerData = {}
+ThemeManager:SetLibrary(Library)  
+SaveManager:SetLibrary(Library)   
+SaveManager:IgnoreThemeSettings() 
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })  
+ThemeManager:SetFolder("MyScriptHub")            
+SaveManager:SetFolder("MyScriptHub/specific-game")  
+SaveManager:SetSubFolder("specific-place")       
+SaveManager:BuildConfigSection(Tabs.UISettings)  
+ThemeManager:ApplyToTab(Tabs.UISettings)
+SaveManager:LoadAutoloadConfig()
 
--- 等待玩家和角色加载完成
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
-
--- 服务引用
-local userInputService = game:GetService("UserInputService")
-local runService = game:GetService("RunService")
-local players = game:GetService("Players")
-local camera = workspace.CurrentCamera
-
--- 功能状态
-local noclipEnabled = false
-local flyEnabled = false
-local espEnabled = false
-local walkSpeedValue = humanoid.WalkSpeed
-local flySpeed = 5  -- 默认 5 米/秒，范围 1-10
-
--- 透视颜色设置 (边缘颜色默认为亮红色)
-local espOutlineColor = Color3.fromRGB(255, 0, 0)
-local espFillColor = Color3.fromRGB(255, 0, 0)  -- 填充颜色也可调，但用户只要求边缘颜色，为更丰富也提供填充调节（可选）
-
--- 飞行相关变量
-local bodyVelocity = nil
-local bodyGyro = nil
-local flyConnection = nil
-local isFlying = false
-local moveVector = Vector3.new(0, 0, 0)
-
--- GUI 元素 (创建在屏幕右侧)
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "UtilityGUI"
-screenGui.Parent = player:WaitForChild("PlayerGui")
-
--- 主框架
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 260, 0, 470)
-mainFrame.Position = UDim2.new(1, -270, 0.5, -235)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-mainFrame.BackgroundTransparency = 0.15
-mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Parent = screenGui
-
--- 圆角
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = mainFrame
-
--- 标题
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 35)
-title.BackgroundTransparency = 1
-title.Text = "通用功能面板"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.Parent = mainFrame
-
--- 穿墙按钮
-local noclipButton = Instance.new("TextButton")
-noclipButton.Size = UDim2.new(0.9, 0, 0, 36)
-noclipButton.Position = UDim2.new(0.05, 0, 0.1, 0)
-noclipButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-noclipButton.Text = "穿墙 [关闭]"
-noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-noclipButton.Font = Enum.Font.Gotham
-noclipButton.TextSize = 14
-local noclipCorner = Instance.new("UICorner")
-noclipCorner.CornerRadius = UDim.new(0, 6)
-noclipCorner.Parent = noclipButton
-noclipButton.Parent = mainFrame
-
--- 飞行按钮
-local flyButton = Instance.new("TextButton")
-flyButton.Size = UDim2.new(0.9, 0, 0, 36)
-flyButton.Position = UDim2.new(0.05, 0, 0.19, 0)
-flyButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-flyButton.Text = "飞行 [关闭]"
-flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-flyButton.Font = Enum.Font.Gotham
-flyButton.TextSize = 14
-local flyCorner = Instance.new("UICorner")
-flyCorner.CornerRadius = UDim.new(0, 6)
-flyCorner.Parent = flyButton
-flyButton.Parent = mainFrame
-
--- 透视按钮
-local espButton = Instance.new("TextButton")
-espButton.Size = UDim2.new(0.9, 0, 0, 36)
-espButton.Position = UDim2.new(0.05, 0, 0.28, 0)
-espButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-espButton.Text = "透视玩家 [关闭]"
-espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-espButton.Font = Enum.Font.Gotham
-espButton.TextSize = 14
-local espCorner = Instance.new("UICorner")
-espCorner.CornerRadius = UDim.new(0, 6)
-espCorner.Parent = espButton
-espButton.Parent = mainFrame
-
--- 移速控制区域
-local speedLabel = Instance.new("TextLabel")
-speedLabel.Size = UDim2.new(0.9, 0, 0, 22)
-speedLabel.Position = UDim2.new(0.05, 0, 0.38, 0)
-speedLabel.BackgroundTransparency = 1
-speedLabel.Text = "移动速度: " .. tostring(humanoid.WalkSpeed)
-speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedLabel.Font = Enum.Font.Gotham
-speedLabel.TextSize = 12
-speedLabel.Parent = mainFrame
-
--- 移速滑动条（映射范围1~999999999，对数或线性？为了可操作性，使用线性映射但最大值巨大，滑动时以指数方式更合理，这里使用输入框辅助）
--- 更好的方案：提供滑块和数值输入框，滑块控制数量级，或者直接使用输入框。为了用户体验，提供一个输入框直接修改数值。
-local speedInput = Instance.new("TextBox")
-speedInput.Size = UDim2.new(0.5, 0, 0, 30)
-speedInput.Position = UDim2.new(0.25, 0, 0.43, 0)
-speedInput.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-speedInput.Text = tostring(humanoid.WalkSpeed)
-speedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedInput.Font = Enum.Font.Gotham
-speedInput.TextSize = 14
-speedInput.ClearTextOnFocus = false
-local speedInputCorner = Instance.new("UICorner")
-speedInputCorner.CornerRadius = UDim.new(0, 6)
-speedInputCorner.Parent = speedInput
-speedInput.Parent = mainFrame
-
--- 移速滑动条（辅助快速调节，但范围太大滑块精度有限，改为百分比滑动，实际值 = 10^(百分比*9) 范围1~1e9）
-local speedSliderBg = Instance.new("Frame")
-speedSliderBg.Size = UDim2.new(0.9, 0, 0, 6)
-speedSliderBg.Position = UDim2.new(0.05, 0, 0.5, 0)
-speedSliderBg.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
-speedSliderBg.BorderSizePixel = 0
-local sliderCorner = Instance.new("UICorner")
-sliderCorner.CornerRadius = UDim.new(0, 3)
-sliderCorner.Parent = speedSliderBg
-speedSliderBg.Parent = mainFrame
-
-local speedSliderFill = Instance.new("Frame")
-speedSliderFill.Size = UDim2.new(0, 0, 1, 0)  -- 初始根据当前移速计算
-speedSliderFill.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
-speedSliderFill.BorderSizePixel = 0
-local fillCorner = Instance.new("UICorner")
-fillCorner.CornerRadius = UDim.new(0, 3)
-fillCorner.Parent = speedSliderFill
-speedSliderFill.Parent = speedSliderBg
-
-local speedSliderButton = Instance.new("TextButton")
-speedSliderButton.Size = UDim2.new(0, 12, 0, 12)
-speedSliderButton.Position = UDim2.new(0, -6, 0.5, -6)
-speedSliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-speedSliderButton.Text = ""
-speedSliderButton.AutoButtonColor = false
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(1, 0)
-btnCorner.Parent = speedSliderButton
-speedSliderButton.Parent = speedSliderBg
-
--- 飞行速度滑动条（1~10）
-local flySpeedLabel = Instance.new("TextLabel")
-flySpeedLabel.Size = UDim2.new(0.9, 0, 0, 22)
-flySpeedLabel.Position = UDim2.new(0.05, 0, 0.57, 0)
-flySpeedLabel.BackgroundTransparency = 1
-flySpeedLabel.Text = "飞行速度: " .. tostring(flySpeed) .. " m/s"
-flySpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-flySpeedLabel.Font = Enum.Font.Gotham
-flySpeedLabel.TextSize = 12
-flySpeedLabel.Parent = mainFrame
-
-local flySliderBg = Instance.new("Frame")
-flySliderBg.Size = UDim2.new(0.9, 0, 0, 6)
-flySliderBg.Position = UDim2.new(0.05, 0, 0.62, 0)
-flySliderBg.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
-flySliderBg.BorderSizePixel = 0
-local flySliderCorner = Instance.new("UICorner")
-flySliderCorner.CornerRadius = UDim.new(0, 3)
-flySliderCorner.Parent = flySliderBg
-flySliderBg.Parent = mainFrame
-
-local flySliderFill = Instance.new("Frame")
-flySliderFill.Size = UDim2.new((flySpeed - 1) / 9, 0, 1, 0)
-flySliderFill.BackgroundColor3 = Color3.fromRGB(0, 200, 150)
-flySliderFill.BorderSizePixel = 0
-local flyFillCorner = Instance.new("UICorner")
-flyFillCorner.CornerRadius = UDim.new(0, 3)
-flyFillCorner.Parent = flySliderFill
-flySliderFill.Parent = flySliderBg
-
-local flySliderButton = Instance.new("TextButton")
-flySliderButton.Size = UDim2.new(0, 12, 0, 12)
-flySliderButton.Position = UDim2.new((flySpeed - 1) / 9, -6, 0.5, -6)
-flySliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-flySliderButton.Text = ""
-flySliderButton.AutoButtonColor = false
-local flyBtnCorner = Instance.new("UICorner")
-flyBtnCorner.CornerRadius = UDim.new(1, 0)
-flyBtnCorner.Parent = flySliderButton
-flySliderButton.Parent = flySliderBg
-
--- 透视颜色调节区域
-local colorLabel = Instance.new("TextLabel")
-colorLabel.Size = UDim2.new(0.9, 0, 0, 22)
-colorLabel.Position = UDim2.new(0.05, 0, 0.69, 0)
-colorLabel.BackgroundTransparency = 1
-colorLabel.Text = "透视边缘颜色 (RGB)"
-colorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-colorLabel.Font = Enum.Font.Gotham
-colorLabel.TextSize = 12
-colorLabel.Parent = mainFrame
-
--- 红色滑块
-local rLabel = Instance.new("TextLabel")
-rLabel.Size = UDim2.new(0.15, 0, 0, 20)
-rLabel.Position = UDim2.new(0.05, 0, 0.75, 0)
-rLabel.BackgroundTransparency = 1
-rLabel.Text = "R"
-rLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-rLabel.Font = Enum.Font.Gotham
-rLabel.TextSize = 12
-rLabel.Parent = mainFrame
-
-local rSliderBg = Instance.new("Frame")
-rSliderBg.Size = UDim2.new(0.6, 0, 0, 6)
-rSliderBg.Position = UDim2.new(0.2, 0, 0.755, 0)
-rSliderBg.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
-rSliderBg.BorderSizePixel = 0
-local rCorner = Instance.new("UICorner")
-rCorner.CornerRadius = UDim.new(0, 3)
-rCorner.Parent = rSliderBg
-rSliderBg.Parent = mainFrame
-
-local rFill = Instance.new("Frame")
-rFill.Size = UDim2.new(espOutlineColor.r, 0, 1, 0)
-rFill.BackgroundColor3 = Color3.fromRGB(200, 70, 70)
-rFill.BorderSizePixel = 0
-rFill.Parent = rSliderBg
-
-local rButton = Instance.new("TextButton")
-rButton.Size = UDim2.new(0, 12, 0, 12)
-rButton.Position = UDim2.new(espOutlineColor.r, -6, 0.5, -6)
-rButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-rButton.Text = ""
-rButton.AutoButtonColor = false
-local rBtnCorner = Instance.new("UICorner")
-rBtnCorner.CornerRadius = UDim.new(1, 0)
-rBtnCorner.Parent = rButton
-rButton.Parent = rSliderBg
-
--- 绿色滑块
-local gLabel = Instance.new("TextLabel")
-gLabel.Size = UDim2.new(0.15, 0, 0, 20)
-gLabel.Position = UDim2.new(0.05, 0, 0.81, 0)
-gLabel.BackgroundTransparency = 1
-gLabel.Text = "G"
-gLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-gLabel.Font = Enum.Font.Gotham
-gLabel.TextSize = 12
-gLabel.Parent = mainFrame
-
-local gSliderBg = Instance.new("Frame")
-gSliderBg.Size = UDim2.new(0.6, 0, 0, 6)
-gSliderBg.Position = UDim2.new(0.2, 0, 0.815, 0)
-gSliderBg.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
-gSliderBg.BorderSizePixel = 0
-local gCorner = Instance.new("UICorner")
-gCorner.CornerRadius = UDim.new(0, 3)
-gCorner.Parent = gSliderBg
-gSliderBg.Parent = mainFrame
-
-local gFill = Instance.new("Frame")
-gFill.Size = UDim2.new(espOutlineColor.g, 0, 1, 0)
-gFill.BackgroundColor3 = Color3.fromRGB(70, 200, 70)
-gFill.BorderSizePixel = 0
-gFill.Parent = gSliderBg
-
-local gButton = Instance.new("TextButton")
-gButton.Size = UDim2.new(0, 12, 0, 12)
-gButton.Position = UDim2.new(espOutlineColor.g, -6, 0.5, -6)
-gButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-gButton.Text = ""
-gButton.AutoButtonColor = false
-local gBtnCorner = Instance.new("UICorner")
-gBtnCorner.CornerRadius = UDim.new(1, 0)
-gBtnCorner.Parent = gButton
-gButton.Parent = gSliderBg
-
--- 蓝色滑块
-local bLabel = Instance.new("TextLabel")
-bLabel.Size = UDim2.new(0.15, 0, 0, 20)
-bLabel.Position = UDim2.new(0.05, 0, 0.87, 0)
-bLabel.BackgroundTransparency = 1
-bLabel.Text = "B"
-bLabel.TextColor3 = Color3.fromRGB(100, 100, 255)
-bLabel.Font = Enum.Font.Gotham
-bLabel.TextSize = 12
-bLabel.Parent = mainFrame
-
-local bSliderBg = Instance.new("Frame")
-bSliderBg.Size = UDim2.new(0.6, 0, 0, 6)
-bSliderBg.Position = UDim2.new(0.2, 0, 0.875, 0)
-bSliderBg.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
-bSliderBg.BorderSizePixel = 0
-local bCorner = Instance.new("UICorner")
-bCorner.CornerRadius = UDim.new(0, 3)
-bCorner.Parent = bSliderBg
-bSliderBg.Parent = mainFrame
-
-local bFill = Instance.new("Frame")
-bFill.Size = UDim2.new(espOutlineColor.b, 0, 1, 0)
-bFill.BackgroundColor3 = Color3.fromRGB(70, 70, 200)
-bFill.BorderSizePixel = 0
-bFill.Parent = bSliderBg
-
-local bButton = Instance.new("TextButton")
-bButton.Size = UDim2.new(0, 12, 0, 12)
-bButton.Position = UDim2.new(espOutlineColor.b, -6, 0.5, -6)
-bButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-bButton.Text = ""
-bButton.AutoButtonColor = false
-local bBtnCorner = Instance.new("UICorner")
-bBtnCorner.CornerRadius = UDim.new(1, 0)
-bBtnCorner.Parent = bButton
-bButton.Parent = bSliderBg
-
--- 辅助函数：更新移速显示和滑块位置（基于对数映射）
-local function getLogT(value)
-    -- value 范围 1 ~ 1e9，映射到 0~1 对数
-    local minV = 1
-    local maxV = 1e9
-    local logMin = math.log(minV)
-    local logMax = math.log(maxV)
-    local logVal = math.log(value)
-    return (logVal - logMin) / (logMax - logMin)
-end
-
-local function getValueFromLogT(t)
-    local minV = 1
-    local maxV = 1e9
-    local logMin = math.log(minV)
-    local logMax = math.log(maxV)
-    local logVal = logMin + t * (logMax - logMin)
-    return math.exp(logVal)
-end
-
-local function updateWalkSpeedUI()
-    local current = humanoid.WalkSpeed
-    speedInput.Text = tostring(math.floor(current + 0.5))
-    local t = getLogT(current)
-    t = math.clamp(t, 0, 1)
-    speedSliderFill.Size = UDim2.new(t, 0, 1, 0)
-    speedSliderButton.Position = UDim2.new(t, -6, 0.5, -6)
-end
-
-local function setWalkSpeed(value)
-    value = math.clamp(value, 1, 1e9)
-    humanoid.WalkSpeed = value
-    updateWalkSpeedUI()
-end
-
-local function updateFlySpeedUI()
-    flySpeedLabel.Text = "飞行速度: " .. tostring(flySpeed) .. " m/s"
-    local t = (flySpeed - 1) / 9
-    t = math.clamp(t, 0, 1)
-    flySliderFill.Size = UDim2.new(t, 0, 1, 0)
-    flySliderButton.Position = UDim2.new(t, -6, 0.5, -6)
-    -- 如果正在飞行，动态调整速度
-    if flyEnabled and bodyVelocity then
-        bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-        -- 速度会在飞行更新循环中根据移动输入实时计算，这里只需修改 flySpeed 变量即可
-    end
-end
-
--- 穿墙核心逻辑
-local function onNoclip()
-    if not noclipEnabled then return end
-    for _, part in ipairs(character:GetDescendants()) do
-        if part:IsA("BasePart") and part.CanCollide then
-            part.CanCollide = false
+-- 水印更新
+Library:SetWatermarkVisibility(true)
+local function updateWatermark()
+    local fps = 60
+    local frameTimer = tick()
+    local frameCounter = 0
+    game:GetService('RunService').RenderStepped:Connect(function()
+        frameCounter = frameCounter + 1
+        if ((tick() - frameTimer) >= 1) then
+            fps = frameCounter
+            frameTimer = tick()
+            frameCounter = 0
         end
-    end
-end
-
-local noclipConnection
-local function toggleNoclip()
-    noclipEnabled = not noclipEnabled
-    noclipButton.Text = noclipEnabled and "穿墙 [开启]" or "穿墙 [关闭]"
-    if noclipEnabled then
-        onNoclip()
-        noclipConnection = runService.Heartbeat:Connect(onNoclip)
-    else
-        if noclipConnection then noclipConnection:Disconnect() end
-        for _, part in ipairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
-        end
-    end
-end
-
--- 透视玩家 (Highlight 方式，边缘颜色可调)
-local espObjects = {}
-local function updateESP()
-    if not espEnabled then
-        for _, obj in pairs(espObjects) do
-            if obj and obj.Parent then obj:Destroy() end
-        end
-        espObjects = {}
-        return
-    end
-    for _, plr in ipairs(players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            if not espObjects[plr] then
-                local highlight = Instance.new("Highlight")
-                highlight.FillColor = espFillColor
-                highlight.OutlineColor = espOutlineColor
-                highlight.FillTransparency = 0.6
-                highlight.Parent = plr.Character
-                espObjects[plr] = highlight
-            else
-                -- 更新颜色
-                espObjects[plr].OutlineColor = espOutlineColor
-                espObjects[plr].FillColor = espFillColor
-            end
-        end
-    end
-    for plr, highlight in pairs(espObjects) do
-        if not plr.Parent or not plr.Character or plr.Character.Parent == nil then
-            highlight:Destroy()
-            espObjects[plr] = nil
-        end
-    end
-end
-
-local function toggleESP()
-    espEnabled = not espEnabled
-    espButton.Text = espEnabled and "透视玩家 [开启]" or "透视玩家 [关闭]"
-    updateESP()
-    if espEnabled then
-        players.PlayerAdded:Connect(function(newPlr)
-            task.wait(1)
-            updateESP()
-        end)
-        players.PlayerRemoving:Connect(function(plr)
-            if espObjects[plr] then
-                espObjects[plr]:Destroy()
-                espObjects[plr] = nil
-            end
-        end)
-    end
-end
-
--- 更新透视边缘颜色
-local function setOutlineColor(color)
-    espOutlineColor = color
-    updateESP()
-    -- 更新滑块UI显示
-    rFill.Size = UDim2.new(espOutlineColor.r, 0, 1, 0)
-    rButton.Position = UDim2.new(espOutlineColor.r, -6, 0.5, -6)
-    gFill.Size = UDim2.new(espOutlineColor.g, 0, 1, 0)
-    gButton.Position = UDim2.new(espOutlineColor.g, -6, 0.5, -6)
-    bFill.Size = UDim2.new(espOutlineColor.b, 0, 1, 0)
-    bButton.Position = UDim2.new(espOutlineColor.b, -6, 0.5, -6)
-end
-
--- 飞行功能实现
-local function startFly()
-    if flyEnabled then return end
-    flyEnabled = true
-    flyButton.Text = "飞行 [开启]"
-    -- 保存原重力
-    local originalGravity = workspace.Gravity
-    workspace.Gravity = 0
-    humanoid.PlatformStand = true
-    
-    bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-    bodyVelocity.Parent = rootPart
-    
-    bodyGyro = Instance.new("BodyGyro")
-    bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-    bodyGyro.CFrame = rootPart.CFrame
-    bodyGyro.Parent = rootPart
-    
-    -- 飞行更新循环
-    flyConnection = runService.RenderStepped:Connect(function()
-        if not flyEnabled or not rootPart.Parent then return end
-        local move = Vector3.new(0, 0, 0)
-        -- 获取键盘输入（WASD + 空格/Ctrl 上下）
-        if userInputService:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(0, 0, -1) end
-        if userInputService:IsKeyDown(Enum.KeyCode.S) then move = move + Vector3.new(0, 0, 1) end
-        if userInputService:IsKeyDown(Enum.KeyCode.A) then move = move + Vector3.new(-1, 0, 0) end
-        if userInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(1, 0, 0) end
-        if userInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
-        if userInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move + Vector3.new(0, -1, 0) end
-        
-        if move.Magnitude > 0 then
-            move = move.Unit
-        end
-        -- 基于相机方向计算速度向量
-        local cameraCF = camera.CFrame
-        local forward = cameraCF.LookVector
-        local right = cameraCF.RightVector
-        local up = cameraCF.UpVector
-        local velocityDirection = (right * move.X + up * move.Y + forward * -move.Z).Unit
-        local targetVelocity = velocityDirection * flySpeed
-        bodyVelocity.Velocity = targetVelocity
-        -- 保持角色朝向
-        if targetVelocity.Magnitude > 0.1 then
-            bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + targetVelocity)
-        end
+        Library:SetWatermark(string.format('April | %d FPS | %d ping ', 
+            math.floor(fps), 
+            math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
+        ))
     end)
 end
-
-local function stopFly()
-    if not flyEnabled then return end
-    flyEnabled = false
-    flyButton.Text = "飞行 [关闭]"
-    workspace.Gravity = 196.2  -- 恢复默认重力
-    humanoid.PlatformStand = false
-    if bodyVelocity then bodyVelocity:Destroy() end
-    if bodyGyro then bodyGyro:Destroy() end
-    if flyConnection then flyConnection:Disconnect() end
-    bodyVelocity = nil
-    bodyGyro = nil
-    flyConnection = nil
-end
-
-local function toggleFly()
-    if flyEnabled then
-        stopFly()
-    else
-        startFly()
-    end
-end
-
--- 按钮事件连接
-noclipButton.MouseButton1Click:Connect(toggleNoclip)
-flyButton.MouseButton1Click:Connect(toggleFly)
-espButton.MouseButton1Click:Connect(toggleESP)
-
--- 移速输入框
-speedInput.FocusLost:Connect(function(enterPressed)
-    local val = tonumber(speedInput.Text)
-    if val then
-        setWalkSpeed(val)
-    else
-        updateWalkSpeedUI()
-    end
-end)
-
--- 移速滑块拖动（使用鼠标拖动事件）
-local draggingSpeed = false
-speedSliderButton.MouseButton1Down:Connect(function()
-    draggingSpeed = true
-end)
-userInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        draggingSpeed = false
-    end
-end)
-userInputService.InputChanged:Connect(function(input)
-    if draggingSpeed and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local framePos = speedSliderBg.AbsolutePosition
-        local width = speedSliderBg.AbsoluteSize.X
-        local mouseX = input.Position.X
-        local t = math.clamp((mouseX - framePos.X) / width, 0, 1)
-        local newSpeed = getValueFromLogT(t)
-        setWalkSpeed(newSpeed)
-    end
-end)
-
--- 飞行速度滑块拖动
-local draggingFly = false
-flySliderButton.MouseButton1Down:Connect(function()
-    draggingFly = true
-end)
-userInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        draggingFly = false
-    end
-end)
-userInputService.InputChanged:Connect(function(input)
-    if draggingFly and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local framePos = flySliderBg.AbsolutePosition
-        local width = flySliderBg.AbsoluteSize.X
-        local mouseX = input.Position.X
-        local t = math.clamp((mouseX - framePos.X) / width, 0, 1)
-        flySpeed = 1 + t * 9
-        updateFlySpeedUI()
-    end
-end)
-
--- 颜色滑块拖动逻辑 (R)
-local draggingR = false
-rButton.MouseButton1Down:Connect(function() draggingR = true end)
-userInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        draggingR = false; draggingG = false; draggingB = false
-    end
-end)
-userInputService.InputChanged:Connect(function(input)
-    if draggingR and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local framePos = rSliderBg.AbsolutePosition
-        local width = rSliderBg.AbsoluteSize.X
-        local mouseX = input.Position.X
-        local t = math.clamp((mouseX - framePos.X) / width, 0, 1)
-        setOutlineColor(Color3.new(t, espOutlineColor.g, espOutlineColor.b))
-    end
-end)
-
-local draggingG = false
-gButton.MouseButton1Down:Connect(function() draggingG = true end)
-userInputService.InputChanged:Connect(function(input)
-    if draggingG and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local framePos = gSliderBg.AbsolutePosition
-        local width = gSliderBg.AbsoluteSize.X
-        local mouseX = input.Position.X
-        local t = math.clamp((mouseX - framePos.X) / width, 0, 1)
-        setOutlineColor(Color3.new(espOutlineColor.r, t, espOutlineColor.b))
-    end
-end)
-
-local draggingB = false
-bButton.MouseButton1Down:Connect(function() draggingB = true end)
-userInputService.InputChanged:Connect(function(input)
-    if draggingB and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local framePos = bSliderBg.AbsolutePosition
-        local width = bSliderBg.AbsoluteSize.X
-        local mouseX = input.Position.X
-        local t = math.clamp((mouseX - framePos.X) / width, 0, 1)
-        setOutlineColor(Color3.new(espOutlineColor.r, espOutlineColor.g, t))
-    end
-end)
-
--- 初始化UI数值
-updateWalkSpeedUI()
-updateFlySpeedUI()
-setOutlineColor(espOutlineColor)
-
--- 监听角色重生
-player.CharacterAdded:Connect(function(newChar)
-    character = newChar
-    rootPart = character:WaitForChild("HumanoidRootPart")
-    humanoid = character:WaitForChild("Humanoid")
-    -- 重置状态
-    if flyEnabled then
-        stopFly()
-        flyEnabled = false
-        flyButton.Text = "飞行 [关闭]"
-    end
-    if noclipEnabled then
-        noclipEnabled = false
-        if noclipConnection then noclipConnection:Disconnect() end
-        noclipButton.Text = "穿墙 [关闭]"
-    end
-    -- 移速设置保留
-    setWalkSpeed(walkSpeedValue)
-    -- 透视更新
-    updateESP()
-end)
-
--- 窗口关闭按钮（可选，增加关闭面板按钮）
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 25, 0, 25)
-closeButton.Position = UDim2.new(1, -30, 0, 5)
-closeButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-closeButton.Text = "X"
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeButton.Font = Enum.Font.GothamBold
-closeButton.TextSize = 14
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 4)
-closeCorner.Parent = closeButton
-closeButton.Parent = mainFrame
-closeButton.MouseButton1Click:Connect(function()
-    screenGui.Enabled = false
-end)
-
-print("通用功能脚本已加载 | 穿墙 | 飞行 | 移速(1~1e9) | 透视(可调边缘颜色)")
+updateWatermark()
