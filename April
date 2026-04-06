@@ -1,3 +1,45 @@
+getgenv().fireproximityprompt = fireproximityprompt or (syn and syn.fire_proximity_prompt) or function(prompt)
+    if prompt and prompt.InputHold then prompt:InputHold() end
+end
+
+getgenv().keypress = keypress or (syn and syn.keypress) or (mouse1press and function(key) mouse1press() end) or function() end
+getgenv().keyrelease = keyrelease or (syn and syn.keyrelease) or (mouse1release and function(key) mouse1release() end) or function() end
+
+getgenv().http_request = http_request or (syn and syn.request) or (request and request) or function() return {StatusCode=404} end
+
+if not hookmetamethod then
+    local mt = getrawmetatable and getrawmetatable(game) or debug.getmetatable(game)
+    if mt then
+        getgenv().originalNamecall = mt.__namecall
+        hookmetamethod = function(_, method, func)
+            local old = mt[method]
+            mt[method] = func
+            return old
+        end
+    end
+end
+
+-- 为可能缺失的 identifyexecutor 提供默认值
+if not identifyexecutor then getgenv().identifyexecutor = function() return "Unknown" end end
+
+-- ========== 全局变量初始化 ==========
+getgenv().autoTeleportMedkitEnabled = false
+getgenv().teleportMedkitThread = nil
+getgenv().autoTeleportColaEnabled = false
+getgenv().teleportColaThread = nil
+getgenv()._G = _G or {}
+_G.Fullbright = false
+_G.Brightness = 0
+_G.GlobalShadows = false
+_G.NoFog = false
+_G.CustomSpeed = 4
+_G.AutoGen = false
+_G.SpeedToggle = false
+_G.noclipState = false
+_G.showChat = false
+_G.VoidsakenExecuted = false
+
+-- ========== 原脚本内容（修正关键点） ==========
 local repo = "https://raw.githubusercontent.com/San1na/ObsidianRemake/main/"
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
@@ -3801,7 +3843,7 @@ v437:AddToggle("AntiSubspace", {
     Callback = function()
         task.spawn(function()
             while Toggles.AntiSubspace.Value and task.wait() do
-                for _, v447 in pairs({"SubspaceVFXBlur", "SubspaceVFXColorCorrection"}) do
+                for _, v447 in ipairs({"SubspaceVFXBlur", "SubspaceVFXColorCorrection"}) do
                     if game.Lighting:FindFirstChild(v447) then
                         game.Lighting[v447]:Destroy()
                     end
