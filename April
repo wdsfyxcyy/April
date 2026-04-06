@@ -683,6 +683,7 @@ local Tabs = {
     Esp = Window:AddTab('透视', 'eye'),
     ani = Window:AddTab('负面效果', 'cpu'),
     Main = Window:AddTab('杂项', 'house'),
+    Guest1337 = Window:AddTab('Guest1337', 'user'),
     Bro = Window:AddTab('战斗', 'biohazard'),
     zdx = Window:AddTab('电机', 'printer'),
     Sat = Window:AddTab('体力', 'zap'),
@@ -5257,3 +5258,209 @@ local function updateWatermark()
 end
 
 updateWatermark()
+
+-- ==================== Guest1337 自动战斗（UI 控件） ====================
+local GuestGroup = Tabs.Guest1337:AddLeftGroupbox("自动格挡 & 反击")
+
+local Guest1337Settings = {
+    Enabled = false,
+    BlockKey = "Q",           -- 格挡技能键（默认 Q）
+    PunchKey = "E",           -- 出拳技能键（默认 E）
+    ParryDelay = 0.12,        -- 看到攻击动画后延迟格挡（秒）
+    PunchAfterParry = 0.35,   -- 格挡成功后延迟出拳（秒）
+    AimRadius = 80,           -- 自瞄半径
+    TargetType = "Killers",   -- 目标类型：Killers / Survivors
+}
+
+GuestGroup:AddCheckbox("EnableGuest1337", {
+    Text = "启用自动格挡反击",
+    Default = false,
+    Callback = function(state)
+        Guest1337Settings.Enabled = state
+    end
+})
+
+GuestGroup:AddKeyPicker("BlockKeyPicker", {
+    Default = Guest1337Settings.BlockKey,
+    Text = "格挡技能键",
+    NoUI = false,
+    Callback = function(key)
+        Guest1337Settings.BlockKey = key.Name
+    end
+})
+
+GuestGroup:AddKeyPicker("PunchKeyPicker", {
+    Default = Guest1337Settings.PunchKey,
+    Text = "出拳技能键",
+    NoUI = false,
+    Callback = function(key)
+        Guest1337Settings.PunchKey = key.Name
+    end
+})
+
+GuestGroup:AddSlider("ParryDelaySlider", {
+    Text = "格挡反应延迟（秒）",
+    Default = Guest1337Settings.ParryDelay,
+    Min = 0.05,
+    Max = 0.5,
+    Rounding = 2,
+    Callback = function(val)
+        Guest1337Settings.ParryDelay = val
+    end
+})
+
+GuestGroup:AddSlider("PunchDelaySlider", {
+    Text = "格挡后出拳延迟（秒）",
+    Default = Guest1337Settings.PunchAfterParry,
+    Min = 0.1,
+    Max = 1.0,
+    Rounding = 2,
+    Callback = function(val)
+        Guest1337Settings.PunchAfterParry = val
+    end
+})
+
+GuestGroup:AddSlider("AimRadiusSlider", {
+    Text = "自瞄范围（格）",
+    Default = Guest1337Settings.AimRadius,
+    Min = 20,
+    Max = 150,
+    Rounding = 0,
+    Callback = function(val)
+        Guest1337Settings.AimRadius = val
+    end
+})
+
+GuestGroup:AddDropdown("TargetTypeDropdown", {
+    Text = "自瞄目标类型",
+    Values = {"Killers", "Survivors"},
+    Default = Guest1337Settings.TargetType,
+    Callback = function(choice)
+        Guest1337Settings.TargetType = choice
+    end
+})
+
+GuestGroup:AddLabel("说明：自动检测杀手攻击动画 → 自动格挡 → 自动出拳 + 自瞄")
+
+-- ==================== Guest1337 核心战斗逻辑 ====================
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local VirtualInput = game:GetService("VirtualInputManager")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local function isGuest1337()
+        local char = LocalPlayer.Character
+        return char and char.Name == "Guest1337"
+    end
+    
+    local function getNearbyTargets()
+        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            return {}
+        end
+        local rootPos = LocalPlayer.Character.HumanoidRootPart.Position
+        local targets = {}
+        local folderName = Guest1337Settings.TargetType == "Killers" and "Killers" or "Survivors"
+        local folder = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(folderName)
+        if not folder then return {} end
+        
+        for _, model in ipairs(folder:GetChildren()) do
+            if model:IsA("Model") and model ~= LocalPlayer.Character then
+                local hrp = model:FindFirstChild("HumanoidRootPart")
+                local hum = model:FindFirstChildOfClass("Humanoid")
+                if hrp and hum and hum.Health > 0 then
+                    local dist = (hrp.Position - rootPos).Magnitude
+                    if dist <= Guest1337Settings.AimRadius then
+                        table.insert(targets, {model = model, hrp = hrp, dist = dist})
+                    end
+                end
+            end
+        end
+        table.sort(targets, function(a,b) return a.dist < b.dist end)
+        return targets
+    end
+    
+    local function isKillerAttacking()
+        local killersFolder = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild("Killers")
+        if not killersFolder then return false end
+        
+        for _, killer in ipairs(killersFolder:GetChildren()) do
+            if killer:IsA("Model") then
+                local animator = killer:FindFirstChildOfClass("Animator")
+                if animator then
+                    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                        local animId = track.Animation and track.Animation.AnimationId or ""
+                        if animId:lower():match("attack") or animId:lower():match("hit") or animId:lower():match("slash") then
+                            return true
+                        end
+                    end
+                end
+                local hum = killer:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
+                        local animId = track.Animation and track.Animation.AnimationId or ""
+                        if animId:lower():match("attack") or animId:lower():match("hit") then
+                            return true
+                        end
+                    end
+                end
+            end
+        end
+        return false
+    end
+    
+    local function pressKey(key)
+        if not key or key == "" then return end
+        local keyCode = Enum.KeyCode[key]
+        if keyCode then
+            VirtualInput:SendKeyEvent(true, keyCode, nil)
+            task.wait(0.05)
+            VirtualInput:SendKeyEvent(false, keyCode, nil)
+        end
+    end
+    
+    local function aimAtNearest()
+        local targets = getNearbyTargets()
+        if #targets == 0 then return nil end
+        local target = targets[1]
+        local myChar = LocalPlayer.Character
+        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        if myRoot and target.hrp then
+            local lookPos = Vector3.new(target.hrp.Position.X, myRoot.Position.Y, target.hrp.Position.Z)
+            myRoot.CFrame = CFrame.new(myRoot.Position, lookPos)
+        end
+        return target
+    end
+    
+    local isParrying = false
+    local lastParryTime = 0
+    local attackDetected = false
+    local detectionTimer = 0
+    
+    RunService.RenderStepped:Connect(function(dt)
+        if not Guest1337Settings.Enabled then return end
+        if not isGuest1337() then return end
+        
+        local attacking = isKillerAttacking()
+        if attacking and not attackDetected and not isParrying and (tick() - lastParryTime > 0.5) then
+            attackDetected = true
+            detectionTimer = tick()
+        end
+        
+        if attackDetected and (tick() - detectionTimer >= Guest1337Settings.ParryDelay) then
+            attackDetected = false
+            isParrying = true
+            
+            pressKey(Guest1337Settings.BlockKey)
+            lastParryTime = tick()
+            
+            task.wait(Guest1337Settings.PunchAfterParry)
+            if Guest1337Settings.Enabled then
+                aimAtNearest()
+                task.wait(0.05)
+                pressKey(Guest1337Settings.PunchKey)
+            end
+            isParrying = false
+        end
+    end)
+end)
