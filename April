@@ -1,5 +1,4 @@
 local repo = "https://raw.githubusercontent.com/San1na/ObsidianRemake/main/"
-
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
@@ -668,7 +667,7 @@ end)
 
 local Window = Library:CreateWindow({
     Title = ' RAYSAKEN',
-    Footer = 'April脚本｜Apri脚本｜作者：四有',
+    Footer = 'April脚本｜April脚本｜作者：四月',
     Icon = 114671656594043,
     Center = true,
     AutoShow = true,
@@ -704,7 +703,7 @@ information:AddLabel("用户ID : " .. game.Players.LocalPlayer.UserId)
 information:AddLabel("昵称 : " .. game.Players.LocalPlayer.DisplayName)
 information:AddLabel("账号年龄 : " .. game.Players.LocalPlayer.AccountAge .. " 天")
 
-local new = Tabs.new:AddLeftGroupbox('简介')
+local new = Tabs.new:AddLeftGroupbox('信息')
 
 new:AddButton({
     Text = "加载二级脚本",
@@ -740,7 +739,7 @@ new:AddButton({
         local currentThemeIndex = 1
         
         local Window = WindUI:CreateWindow({
-            Title = gradient("NOLSAKEN   ", Color3.fromRGB(139, 0, 255), Color3.fromRGB(255, 0, 0)), 
+            Title = gradient("April脚本   ", Color3.fromRGB(139, 0, 255), Color3.fromRGB(255, 0, 0)), 
             Author = gradient("Abandoned", Color3.fromRGB(0, 0, 0), Color3.fromRGB(255, 255, 255)),
             IconThemed = true,
             Folder = "April",
@@ -1212,7 +1211,7 @@ new:AddButton({
         
         local faceEnemy = {
             enabled = false,
-            targetType = "Killer",
+            targetType = "杀手",
             autoAim = false
         }
         
@@ -1232,7 +1231,7 @@ new:AddButton({
                         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
                         local myRoot = char.HumanoidRootPart
                         
-                        local targetFolder = faceEnemy.targetType == "Killer" 
+                        local targetFolder = faceEnemy.targetType == "杀手" 
                             and (Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Killers"))
                             or (Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Survivors"))
                         
@@ -2657,7 +2656,7 @@ new:AddButton({
 
 new:AddLabel("双击加载")
 
-new:AddLabel("[+]开发者: 四有")
+new:AddLabel("[+]开发者: 四月")
 
 local MainTabbox = Tabs.Main:AddLeftTabbox()
 local Lighting = MainTabbox:AddTab("亮度控制")
@@ -2766,86 +2765,6 @@ Camera:AddToggle("CustomFOVToggle", {
             end
         end
     end,
-})
-
-local V = Tabs.Main:AddLeftGroupbox('圣诞 🎄 (姜饼人)')
-
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-
-local player = Players.LocalPlayer
-local autoCandyConnection = nil
-local lastTeleportTime = 0
-
-local function teleportToRandomCandy()
-    local character = player.Character
-    if not character then return end
-    
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if not humanoidRootPart then return end
-    
-    local targetFolder = Workspace:FindFirstChild("Map")
-    if targetFolder then
-        targetFolder = targetFolder:FindFirstChild("Ingame")
-        if targetFolder then
-            targetFolder = targetFolder:FindFirstChild("CurrencyLocations")
-        end
-    end
-    
-    if not targetFolder then return end
-    
-    local candyModels = {}
-    for _, child in ipairs(targetFolder:GetChildren()) do
-        if child:IsA("Model") or child:IsA("Part") or child:IsA("MeshPart") then
-            table.insert(candyModels, child)
-        end
-    end
-    
-    if #candyModels > 0 then
-        local randomCandy = candyModels[math.random(1, #candyModels)]
-        
-        local targetPosition
-        if randomCandy:IsA("Model") then
-            local primaryPart = randomCandy.PrimaryPart
-            if primaryPart then
-                targetPosition = primaryPart.Position
-            else
-                for _, part in ipairs(randomCandy:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        targetPosition = part.Position
-                        break
-                    end
-                end
-            end
-        else
-            targetPosition = randomCandy.Position
-        end
-        
-        if targetPosition then
-            humanoidRootPart.CFrame = CFrame.new(targetPosition + Vector3.new(0, 3, 0))
-        end
-    end
-end
-
-V:AddToggle('AutoCandyToggle', {
-    Text = '姜饼人农场',
-    Default = false,
-    Callback = function(value)
-        if value then
-            autoCandyConnection = RunService.Heartbeat:Connect(function()
-                if tick() - lastTeleportTime >= 2 then
-                    lastTeleportTime = tick()
-                    teleportToRandomCandy()
-                end
-            end)
-        else
-            if autoCandyConnection then
-                autoCandyConnection:Disconnect()
-                autoCandyConnection = nil
-            end
-        end
-    end
 })
 
 local KillerSurvival = Tabs.Main:AddLeftGroupbox('聊天框可见')
@@ -3352,10 +3271,10 @@ LeftGroupBox:AddCheckbox("AutoConnectToggle", {
 
 LeftGroupBox:AddSlider("ConnectionSpeed", {
    Text = "连线速度",
-   Default = 2.1,
-   Min = 1,
-   Max = 5,
-   Rounding = 1,
+   Default = 0.05,
+   Min = 0.001,
+   Max = 0.2,
+   Rounding = 3,
    Compact = false,
    Callback = function(Value)
        ConnectionSpeed = Value
@@ -4573,7 +4492,7 @@ killers.ChildAdded:Connect(function(child)
             deleteNewNoli()
         end
     end
-end)
+})
 
 player.CharacterAdded:Connect(function(newCharacter)
     if isVoidRushCrashed then
@@ -4916,7 +4835,7 @@ local function monitorHighlight(h)
     end
 
     local function triggerSprint()
-        if device == "Mobile" then
+        if device == "移动端" then
             local ok, btn = pcall(getSprintingButton)
             if ok and btn then
                 for i, v in pairs(getconnections(btn.MouseButton1Down)) do
@@ -5012,8 +4931,8 @@ Visual:AddCheckbox("AutoSprintToggle", {
 
 Visual:AddDropdown("DeviceType", {
     Text = "设备",
-    Default = "PC",
-    Values = {"Mobile", "PC"},
+    Default = "电脑端",
+    Values = {"移动端", "电脑端"},
     Callback = function(value)
         device = value
     end
@@ -5333,7 +5252,7 @@ local function updateWatermark()
             frameCounter = 0
         end
 
-        Library:SetWatermark(string.format('April脚本  %d FPS | %d ping ', math.floor(fps), math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())))
+        Library:SetWatermark(string.format('April | %d FPS | %d 延迟 ', math.floor(fps), math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())))
     end)
 end
 
