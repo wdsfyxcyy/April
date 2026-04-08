@@ -1,45 +1,3 @@
-getgenv().fireproximityprompt = fireproximityprompt or (syn and syn.fire_proximity_prompt) or function(prompt)
-    if prompt and prompt.InputHold then prompt:InputHold() end
-end
-
-getgenv().keypress = keypress or (syn and syn.keypress) or (mouse1press and function(key) mouse1press() end) or function() end
-getgenv().keyrelease = keyrelease or (syn and syn.keyrelease) or (mouse1release and function(key) mouse1release() end) or function() end
-
-getgenv().http_request = http_request or (syn and syn.request) or (request and request) or function() return {StatusCode=404} end
-
-if not hookmetamethod then
-    local mt = getrawmetatable and getrawmetatable(game) or debug.getmetatable(game)
-    if mt then
-        getgenv().originalNamecall = mt.__namecall
-        hookmetamethod = function(_, method, func)
-            local old = mt[method]
-            mt[method] = func
-            return old
-        end
-    end
-end
-
--- 为可能缺失的 identifyexecutor 提供默认值
-if not identifyexecutor then getgenv().identifyexecutor = function() return "Unknown" end end
-
--- ========== 全局变量初始化 ==========
-getgenv().autoTeleportMedkitEnabled = false
-getgenv().teleportMedkitThread = nil
-getgenv().autoTeleportColaEnabled = false
-getgenv().teleportColaThread = nil
-getgenv()._G = _G or {}
-_G.Fullbright = false
-_G.Brightness = 0
-_G.GlobalShadows = false
-_G.NoFog = false
-_G.CustomSpeed = 4
-_G.AutoGen = false
-_G.SpeedToggle = false
-_G.noclipState = false
-_G.showChat = false
-_G.VoidsakenExecuted = false
-
--- ========== 原脚本内容（修正关键点） ==========
 local repo = "https://raw.githubusercontent.com/San1na/ObsidianRemake/main/"
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
@@ -50,8 +8,45 @@ Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
 Library.NotifySide = "Right"
 
-getgenv().HookRules = getgenv().HookRules or {}
+-- ========== 兼容性函数 ==========
+if not fireproximityprompt then
+    getgenv().fireproximityprompt = function(prompt)
+        if prompt and prompt.HoldDuration then
+            prompt:InputHold()
+            task.wait(prompt.HoldDuration or 0.1)
+            prompt:InputRelease()
+        end
+    end
+end
 
+if not keypress then
+    getgenv().keypress = function(key) end
+    getgenv().keyrelease = function(key) end
+end
+
+-- ========== 初始化全局变量 ==========
+getgenv().HookRules = getgenv().HookRules or {}
+getgenv().Brightness = getgenv().Brightness or 0
+getgenv().GlobalShadows = getgenv().GlobalShadows or false
+getgenv().NoFog = getgenv().NoFog or false
+getgenv().Fullbright = getgenv().Fullbright or false
+getgenv().CustomSpeed = getgenv().CustomSpeed or 4
+getgenv().AutoGen = getgenv().AutoGen or false
+getgenv().SpeedToggle = getgenv().SpeedToggle or false
+getgenv().noclipState = getgenv().noclipState or false
+getgenv().showChat = getgenv().showChat or false
+_G = _G or {}
+_G.CustomFOVEnabled = _G.CustomFOVEnabled or false
+_G.CurrentFOV = _G.CurrentFOV or 80
+_G.VoidsakenExecuted = _G.VoidsakenExecuted or false
+
+-- 自动拾取相关变量
+local autoTeleportMedkitEnabled = false
+local teleportMedkitThread = nil
+local autoTeleportColaEnabled = false
+local teleportColaThread = nil
+
+-- ========== 其余原脚本内容（保持完全相同，只修正变量声明） ==========
 local Services = {
     Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
@@ -2843,9 +2838,9 @@ end
 Library:OnUnload(function()
     _G.VoidsakenExecuted = false
     panic()
-    getgenv().FlipUI:Destroy()
-    getgenv().AimbotUI:Destroy()
-    getgenv().BlockUI:Destroy()
+    if getgenv().FlipUI then getgenv().FlipUI:Destroy() end
+    if getgenv().AimbotUI then getgenv().AimbotUI:Destroy() end
+    if getgenv().BlockUI then getgenv().BlockUI:Destroy() end
 end)
 
 local ZZ = Tabs.Main:AddLeftGroupbox('自动拾取物品')
@@ -3843,7 +3838,7 @@ v437:AddToggle("AntiSubspace", {
     Callback = function()
         task.spawn(function()
             while Toggles.AntiSubspace.Value and task.wait() do
-                for _, v447 in ipairs({"SubspaceVFXBlur", "SubspaceVFXColorCorrection"}) do
+                for _, v447 in pairs({"SubspaceVFXBlur", "SubspaceVFXColorCorrection"}) do
                     if game.Lighting:FindFirstChild(v447) then
                         game.Lighting[v447]:Destroy()
                     end
@@ -4546,7 +4541,7 @@ player.CharacterAdded:Connect(function(newCharacter)
             manageVoidRushState(newCharacter)
         end)
     end
-end)
+})
 
 local ZZ = Tabs.Main:AddRightGroupbox('玩家移动')
 local CFSpeed = 50
