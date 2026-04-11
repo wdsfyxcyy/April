@@ -895,7 +895,9 @@ new:AddButton({
         }
         
         local function fireRagingPace()
-            game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\n\0\0\0RagingPace") })
+            pcall(function()
+                game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\n\0\0\0RagingPace") })
+            end)
         end
         
         local function isRagingPaceAnimationMatching(anim)
@@ -997,7 +999,9 @@ new:AddButton({
         }
         
         local function fire404Error()
-            game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\5\0\0\0404Error") })
+            pcall(function()
+                game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\5\0\0\0404Error") })
+            end)
         end
         
         local function isAntiAnimAnimationMatching(anim)
@@ -1181,18 +1185,21 @@ new:AddButton({
             Callback = function(val) chanceAim.prediction = val end
         })
         
-        local AutoFlipCoins = false
-        local flipCoinsThread = nil
+        -- 修复自动投币冲突：分别控制
+        local AutoFlipCoins3 = false
+        local flipCoinsThread3 = nil
+        local AutoFlipCoins1 = false
+        local flipCoinsThread1 = nil
         
         Tabs.Auto_Stun:Toggle({
             Title = "自动投币 (3)",
             Default = false,
             Callback = function(state)
-                AutoFlipCoins = state
+                AutoFlipCoins3 = state
                 
-                if AutoFlipCoins then
-                    flipCoinsThread = task.spawn(function()
-                        while AutoFlipCoins and task.wait() do
+                if AutoFlipCoins3 then
+                    flipCoinsThread3 = task.spawn(function()
+                        while AutoFlipCoins3 and task.wait() do
                             local playerGui = game:GetService("Players").LocalPlayer.PlayerGui
                             local chargesText = playerGui:FindFirstChild("MainUI") and 
                                                playerGui.MainUI:FindFirstChild("AbilityContainer") and
@@ -1202,13 +1209,15 @@ new:AddButton({
                             if chargesText and chargesText:IsA("TextLabel") and chargesText.Text == "3" then
                                 break
                             else
-                                game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\8\0\0\0CoinFlip") })
+                                pcall(function()
+                                    game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\8\0\0\0CoinFlip") })
+                                end)
                             end
                         end
                     end)
-                elseif flipCoinsThread then
-                    task.cancel(flipCoinsThread)
-                    flipCoinsThread = nil
+                elseif flipCoinsThread3 then
+                    task.cancel(flipCoinsThread3)
+                    flipCoinsThread3 = nil
                 end
             end
         })
@@ -1217,11 +1226,11 @@ new:AddButton({
             Title = "自动投币 (1)",
             Default = false,
             Callback = function(state)
-                AutoFlipCoins = state
+                AutoFlipCoins1 = state
                 
-                if AutoFlipCoins then
-                    flipCoinsThread = task.spawn(function()
-                        while AutoFlipCoins and task.wait() do
+                if AutoFlipCoins1 then
+                    flipCoinsThread1 = task.spawn(function()
+                        while AutoFlipCoins1 and task.wait() do
                             local playerGui = game:GetService("Players").LocalPlayer.PlayerGui
                             local chargesText = playerGui:FindFirstChild("MainUI") and 
                                                playerGui.MainUI:FindFirstChild("AbilityContainer") and
@@ -1231,13 +1240,15 @@ new:AddButton({
                             if chargesText and chargesText:IsA("TextLabel") and chargesText.Text == "1" then
                                 break
                             else
-                                game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\8\0\0\0CoinFlip") })
+                                pcall(function()
+                                    game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\8\0\0\0CoinFlip") })
+                                end)
                             end
                         end
                     end)
-                elseif flipCoinsThread then
-                    task.cancel(flipCoinsThread)
-                    flipCoinsThread = nil
+                elseif flipCoinsThread1 then
+                    task.cancel(flipCoinsThread1)
+                    flipCoinsThread1 = nil
                 end
             end
         })
@@ -2478,6 +2489,7 @@ new:AddButton({
             hiddenStats = false
         }
         
+        -- 修复 firesignal 不存在的问题
         Tabs.Anti:Toggle({
             Title = "反1x1x1x1弹窗",
             Default = false,
@@ -2490,8 +2502,9 @@ new:AddButton({
                             local temp = LocalPlayer.PlayerGui:FindFirstChild("TemporaryUI")
                             if temp and temp:FindFirstChild("1x1x1x1Popup") then
                                 pcall(function()
-                                    if firesignal then
-                                        firesignal(temp["1x1x1x1Popup"].MouseButton1Click)
+                                    local popup = temp["1x1x1x1Popup"]
+                                    if popup.MouseButton1Click then
+                                        popup.MouseButton1Click:Fire()
                                     end
                                 end)
                             end
@@ -2814,13 +2827,15 @@ KillerSurvival:AddCheckbox('AlwaysShowChat', {
             _G.showChat = true
             task.spawn(function()
                 while _G.showChat and task.wait() do
-                    game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration").Enabled = true
+                    local chatConfig = game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration")
+                    if chatConfig then chatConfig.Enabled = true end
                 end
             end)
         else
             _G.showChat = false
             if playingState ~= "Spectating" then
-                game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration").Enabled = false
+                local chatConfig = game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration")
+                if chatConfig then chatConfig.Enabled = false end
             end
         end
     end
@@ -3242,17 +3257,17 @@ do
                puzzle.gridConnections[`{node.row}-{node.col}`] = conn
                
                if i % 5 == 0 or i == #orderedPath then
-                   puzzle:updateGui()
+                   pcall(function() puzzle:updateGui() end)
                    task.wait(delayTime)
                end
            end
            
-           puzzle:checkForWin()
+           pcall(function() puzzle:checkForWin() end)
            task.wait(delayTime * 0.5)
        end
        
-       puzzle:updateGui()
-       puzzle:checkForWin()
+       pcall(function() puzzle:updateGui() end)
+       pcall(function() puzzle:checkForWin() end)
    end
 end
 
@@ -3284,7 +3299,7 @@ Generator:AddToggle("AutoGenerator",{
                     
                     for _,v in ipairs(workspace["Map"]["Ingame"]["Map"]:GetChildren()) do
                         if v.Name == "Generator" then
-                            v["Remotes"]["RE"]:FireServer()
+                            pcall(function() v["Remotes"]["RE"]:FireServer() end)
                         end
                     end
                 end
@@ -3880,7 +3895,7 @@ getgenv().EnableProtection = function()
            task.wait(4)
            local ReplicatedStorage = game:GetService("ReplicatedStorage")
            local RemoteEvent = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent")
-           RemoteEvent:FireServer({game.Players.LocalPlayer.Name .. "DusekkarCancel"})
+           pcall(function() RemoteEvent:FireServer({game.Players.LocalPlayer.Name .. "DusekkarCancel"}) end)
            getgenv().isFiringDusekkar = false
        end)
    end
@@ -5450,9 +5465,11 @@ task.spawn(function()
         if not key or key == "" then return end
         local keyCode = Enum.KeyCode[key]
         if keyCode then
-            VirtualInput:SendKeyEvent(true, keyCode, nil)
-            task.wait(0.05)
-            VirtualInput:SendKeyEvent(false, keyCode, nil)
+            pcall(function()
+                VirtualInput:SendKeyEvent(true, keyCode, nil)
+                task.wait(0.05)
+                VirtualInput:SendKeyEvent(false, keyCode, nil)
+            end)
         end
     end
     
