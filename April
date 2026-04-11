@@ -8,45 +8,8 @@ Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
 Library.NotifySide = "Right"
 
--- ========== 兼容性函数 ==========
-if not fireproximityprompt then
-    getgenv().fireproximityprompt = function(prompt)
-        if prompt and prompt.HoldDuration then
-            prompt:InputHold()
-            task.wait(prompt.HoldDuration or 0.1)
-            prompt:InputRelease()
-        end
-    end
-end
-
-if not keypress then
-    getgenv().keypress = function(key) end
-    getgenv().keyrelease = function(key) end
-end
-
--- ========== 初始化全局变量 ==========
 getgenv().HookRules = getgenv().HookRules or {}
-getgenv().Brightness = getgenv().Brightness or 0
-getgenv().GlobalShadows = getgenv().GlobalShadows or false
-getgenv().NoFog = getgenv().NoFog or false
-getgenv().Fullbright = getgenv().Fullbright or false
-getgenv().CustomSpeed = getgenv().CustomSpeed or 4
-getgenv().AutoGen = getgenv().AutoGen or false
-getgenv().SpeedToggle = getgenv().SpeedToggle or false
-getgenv().noclipState = getgenv().noclipState or false
-getgenv().showChat = getgenv().showChat or false
-_G = _G or {}
-_G.CustomFOVEnabled = _G.CustomFOVEnabled or false
-_G.CurrentFOV = _G.CurrentFOV or 80
-_G.VoidsakenExecuted = _G.VoidsakenExecuted or false
 
--- 自动拾取相关变量
-local autoTeleportMedkitEnabled = false
-local teleportMedkitThread = nil
-local autoTeleportColaEnabled = false
-local teleportColaThread = nil
-
--- ========== 其余原脚本内容（保持完全相同，只修正变量声明） ==========
 local Services = {
     Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
@@ -720,7 +683,6 @@ local Tabs = {
     Esp = Window:AddTab('透视', 'eye'),
     ani = Window:AddTab('负面效果', 'cpu'),
     Main = Window:AddTab('杂项', 'house'),
-    Guest1337 = Window:AddTab('Guest1337', 'user'),
     Bro = Window:AddTab('战斗', 'biohazard'),
     zdx = Window:AddTab('电机', 'printer'),
     Sat = Window:AddTab('体力', 'zap'),
@@ -895,9 +857,7 @@ new:AddButton({
         }
         
         local function fireRagingPace()
-            pcall(function()
-                game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\n\0\0\0RagingPace") })
-            end)
+            game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\n\0\0\0RagingPace") })
         end
         
         local function isRagingPaceAnimationMatching(anim)
@@ -999,9 +959,7 @@ new:AddButton({
         }
         
         local function fire404Error()
-            pcall(function()
-                game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\5\0\0\0404Error") })
-            end)
+            game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\5\0\0\0404Error") })
         end
         
         local function isAntiAnimAnimationMatching(anim)
@@ -1185,21 +1143,18 @@ new:AddButton({
             Callback = function(val) chanceAim.prediction = val end
         })
         
-        -- 修复自动投币冲突：分别控制
-        local AutoFlipCoins3 = false
-        local flipCoinsThread3 = nil
-        local AutoFlipCoins1 = false
-        local flipCoinsThread1 = nil
+        local AutoFlipCoins = false
+        local flipCoinsThread = nil
         
         Tabs.Auto_Stun:Toggle({
             Title = "自动投币 (3)",
             Default = false,
             Callback = function(state)
-                AutoFlipCoins3 = state
+                AutoFlipCoins = state
                 
-                if AutoFlipCoins3 then
-                    flipCoinsThread3 = task.spawn(function()
-                        while AutoFlipCoins3 and task.wait() do
+                if AutoFlipCoins then
+                    flipCoinsThread = task.spawn(function()
+                        while AutoFlipCoins and task.wait() do
                             local playerGui = game:GetService("Players").LocalPlayer.PlayerGui
                             local chargesText = playerGui:FindFirstChild("MainUI") and 
                                                playerGui.MainUI:FindFirstChild("AbilityContainer") and
@@ -1209,15 +1164,13 @@ new:AddButton({
                             if chargesText and chargesText:IsA("TextLabel") and chargesText.Text == "3" then
                                 break
                             else
-                                pcall(function()
-                                    game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\8\0\0\0CoinFlip") })
-                                end)
+                                game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\8\0\0\0CoinFlip") })
                             end
                         end
                     end)
-                elseif flipCoinsThread3 then
-                    task.cancel(flipCoinsThread3)
-                    flipCoinsThread3 = nil
+                elseif flipCoinsThread then
+                    task.cancel(flipCoinsThread)
+                    flipCoinsThread = nil
                 end
             end
         })
@@ -1226,11 +1179,11 @@ new:AddButton({
             Title = "自动投币 (1)",
             Default = false,
             Callback = function(state)
-                AutoFlipCoins1 = state
+                AutoFlipCoins = state
                 
-                if AutoFlipCoins1 then
-                    flipCoinsThread1 = task.spawn(function()
-                        while AutoFlipCoins1 and task.wait() do
+                if AutoFlipCoins then
+                    flipCoinsThread = task.spawn(function()
+                        while AutoFlipCoins and task.wait() do
                             local playerGui = game:GetService("Players").LocalPlayer.PlayerGui
                             local chargesText = playerGui:FindFirstChild("MainUI") and 
                                                playerGui.MainUI:FindFirstChild("AbilityContainer") and
@@ -1240,15 +1193,13 @@ new:AddButton({
                             if chargesText and chargesText:IsA("TextLabel") and chargesText.Text == "1" then
                                 break
                             else
-                                pcall(function()
-                                    game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\8\0\0\0CoinFlip") })
-                                end)
+                                game:GetService("ReplicatedStorage").Modules.Network.RemoteEvent:FireServer("UseActorAbility", { buffer.fromstring("\3\8\0\0\0CoinFlip") })
                             end
                         end
                     end)
-                elseif flipCoinsThread1 then
-                    task.cancel(flipCoinsThread1)
-                    flipCoinsThread1 = nil
+                elseif flipCoinsThread then
+                    task.cancel(flipCoinsThread)
+                    flipCoinsThread = nil
                 end
             end
         })
@@ -2489,7 +2440,6 @@ new:AddButton({
             hiddenStats = false
         }
         
-        -- 修复 firesignal 不存在的问题
         Tabs.Anti:Toggle({
             Title = "反1x1x1x1弹窗",
             Default = false,
@@ -2502,9 +2452,8 @@ new:AddButton({
                             local temp = LocalPlayer.PlayerGui:FindFirstChild("TemporaryUI")
                             if temp and temp:FindFirstChild("1x1x1x1Popup") then
                                 pcall(function()
-                                    local popup = temp["1x1x1x1Popup"]
-                                    if popup.MouseButton1Click then
-                                        popup.MouseButton1Click:Fire()
+                                    if firesignal then
+                                        firesignal(temp["1x1x1x1Popup"].MouseButton1Click)
                                     end
                                 end)
                             end
@@ -2827,15 +2776,13 @@ KillerSurvival:AddCheckbox('AlwaysShowChat', {
             _G.showChat = true
             task.spawn(function()
                 while _G.showChat and task.wait() do
-                    local chatConfig = game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration")
-                    if chatConfig then chatConfig.Enabled = true end
+                    game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration").Enabled = true
                 end
             end)
         else
             _G.showChat = false
             if playingState ~= "Spectating" then
-                local chatConfig = game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration")
-                if chatConfig then chatConfig.Enabled = false end
+                game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration").Enabled = false
             end
         end
     end
@@ -2853,9 +2800,9 @@ end
 Library:OnUnload(function()
     _G.VoidsakenExecuted = false
     panic()
-    if getgenv().FlipUI then getgenv().FlipUI:Destroy() end
-    if getgenv().AimbotUI then getgenv().AimbotUI:Destroy() end
-    if getgenv().BlockUI then getgenv().BlockUI:Destroy() end
+    getgenv().FlipUI:Destroy()
+    getgenv().AimbotUI:Destroy()
+    getgenv().BlockUI:Destroy()
 end)
 
 local ZZ = Tabs.Main:AddLeftGroupbox('自动拾取物品')
@@ -3257,17 +3204,17 @@ do
                puzzle.gridConnections[`{node.row}-{node.col}`] = conn
                
                if i % 5 == 0 or i == #orderedPath then
-                   pcall(function() puzzle:updateGui() end)
+                   puzzle:updateGui()
                    task.wait(delayTime)
                end
            end
            
-           pcall(function() puzzle:checkForWin() end)
+           puzzle:checkForWin()
            task.wait(delayTime * 0.5)
        end
        
-       pcall(function() puzzle:updateGui() end)
-       pcall(function() puzzle:checkForWin() end)
+       puzzle:updateGui()
+       puzzle:checkForWin()
    end
 end
 
@@ -3299,7 +3246,7 @@ Generator:AddToggle("AutoGenerator",{
                     
                     for _,v in ipairs(workspace["Map"]["Ingame"]["Map"]:GetChildren()) do
                         if v.Name == "Generator" then
-                            pcall(function() v["Remotes"]["RE"]:FireServer() end)
+                            v["Remotes"]["RE"]:FireServer()
                         end
                     end
                 end
@@ -3895,7 +3842,7 @@ getgenv().EnableProtection = function()
            task.wait(4)
            local ReplicatedStorage = game:GetService("ReplicatedStorage")
            local RemoteEvent = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent")
-           pcall(function() RemoteEvent:FireServer({game.Players.LocalPlayer.Name .. "DusekkarCancel"}) end)
+           RemoteEvent:FireServer({game.Players.LocalPlayer.Name .. "DusekkarCancel"})
            getgenv().isFiringDusekkar = false
        end)
    end
@@ -4556,7 +4503,7 @@ player.CharacterAdded:Connect(function(newCharacter)
             manageVoidRushState(newCharacter)
         end)
     end
-})
+end)
 
 local ZZ = Tabs.Main:AddRightGroupbox('玩家移动')
 local CFSpeed = 50
@@ -5310,211 +5257,3 @@ local function updateWatermark()
 end
 
 updateWatermark()
-
--- ==================== Guest1337 自动战斗（UI 控件） ====================
-local GuestGroup = Tabs.Guest1337:AddLeftGroupbox("自动格挡 & 反击")
-
-local Guest1337Settings = {
-    Enabled = false,
-    BlockKey = "Q",           -- 格挡技能键（默认 Q）
-    PunchKey = "E",           -- 出拳技能键（默认 E）
-    ParryDelay = 0.12,        -- 看到攻击动画后延迟格挡（秒）
-    PunchAfterParry = 0.35,   -- 格挡成功后延迟出拳（秒）
-    AimRadius = 80,           -- 自瞄半径
-    TargetType = "Killers",   -- 目标类型：Killers / Survivors
-}
-
-GuestGroup:AddCheckbox("EnableGuest1337", {
-    Text = "启用自动格挡反击",
-    Default = false,
-    Callback = function(state)
-        Guest1337Settings.Enabled = state
-    end
-})
-
-GuestGroup:AddKeyPicker("BlockKeyPicker", {
-    Default = Guest1337Settings.BlockKey,
-    Text = "格挡技能键",
-    NoUI = false,
-    Callback = function(key)
-        Guest1337Settings.BlockKey = key.Name
-    end
-})
-
-GuestGroup:AddKeyPicker("PunchKeyPicker", {
-    Default = Guest1337Settings.PunchKey,
-    Text = "出拳技能键",
-    NoUI = false,
-    Callback = function(key)
-        Guest1337Settings.PunchKey = key.Name
-    end
-})
-
-GuestGroup:AddSlider("ParryDelaySlider", {
-    Text = "格挡反应延迟（秒）",
-    Default = Guest1337Settings.ParryDelay,
-    Min = 0.05,
-    Max = 0.5,
-    Rounding = 2,
-    Callback = function(val)
-        Guest1337Settings.ParryDelay = val
-    end
-})
-
-GuestGroup:AddSlider("PunchDelaySlider", {
-    Text = "格挡后出拳延迟（秒）",
-    Default = Guest1337Settings.PunchAfterParry,
-    Min = 0.1,
-    Max = 1.0,
-    Rounding = 2,
-    Callback = function(val)
-        Guest1337Settings.PunchAfterParry = val
-    end
-})
-
-GuestGroup:AddSlider("AimRadiusSlider", {
-    Text = "自瞄范围（格）",
-    Default = Guest1337Settings.AimRadius,
-    Min = 20,
-    Max = 150,
-    Rounding = 0,
-    Callback = function(val)
-        Guest1337Settings.AimRadius = val
-    end
-})
-
-GuestGroup:AddDropdown("TargetTypeDropdown", {
-    Text = "自瞄目标类型",
-    Values = {"Killers", "Survivors"},
-    Default = Guest1337Settings.TargetType,
-    Callback = function(choice)
-        Guest1337Settings.TargetType = choice
-    end
-})
-
-GuestGroup:AddLabel("说明：自动检测杀手攻击动画 → 自动格挡 → 自动出拳 + 自瞄")
-
--- ==================== Guest1337 核心战斗逻辑 ====================
-task.spawn(function()
-    local Players = game:GetService("Players")
-    local RunService = game:GetService("RunService")
-    local VirtualInput = game:GetService("VirtualInputManager")
-    local LocalPlayer = Players.LocalPlayer
-    
-    local function isGuest1337()
-        local char = LocalPlayer.Character
-        return char and char.Name == "Guest1337"
-    end
-    
-    local function getNearbyTargets()
-        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            return {}
-        end
-        local rootPos = LocalPlayer.Character.HumanoidRootPart.Position
-        local targets = {}
-        local folderName = Guest1337Settings.TargetType == "Killers" and "Killers" or "Survivors"
-        local folder = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(folderName)
-        if not folder then return {} end
-        
-        for _, model in ipairs(folder:GetChildren()) do
-            if model:IsA("Model") and model ~= LocalPlayer.Character then
-                local hrp = model:FindFirstChild("HumanoidRootPart")
-                local hum = model:FindFirstChildOfClass("Humanoid")
-                if hrp and hum and hum.Health > 0 then
-                    local dist = (hrp.Position - rootPos).Magnitude
-                    if dist <= Guest1337Settings.AimRadius then
-                        table.insert(targets, {model = model, hrp = hrp, dist = dist})
-                    end
-                end
-            end
-        end
-        table.sort(targets, function(a,b) return a.dist < b.dist end)
-        return targets
-    end
-    
-    local function isKillerAttacking()
-        local killersFolder = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild("Killers")
-        if not killersFolder then return false end
-        
-        for _, killer in ipairs(killersFolder:GetChildren()) do
-            if killer:IsA("Model") then
-                local animator = killer:FindFirstChildOfClass("Animator")
-                if animator then
-                    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                        local animId = track.Animation and track.Animation.AnimationId or ""
-                        if animId:lower():match("attack") or animId:lower():match("hit") or animId:lower():match("slash") then
-                            return true
-                        end
-                    end
-                end
-                local hum = killer:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
-                        local animId = track.Animation and track.Animation.AnimationId or ""
-                        if animId:lower():match("attack") or animId:lower():match("hit") then
-                            return true
-                        end
-                    end
-                end
-            end
-        end
-        return false
-    end
-    
-    local function pressKey(key)
-        if not key or key == "" then return end
-        local keyCode = Enum.KeyCode[key]
-        if keyCode then
-            pcall(function()
-                VirtualInput:SendKeyEvent(true, keyCode, nil)
-                task.wait(0.05)
-                VirtualInput:SendKeyEvent(false, keyCode, nil)
-            end)
-        end
-    end
-    
-    local function aimAtNearest()
-        local targets = getNearbyTargets()
-        if #targets == 0 then return nil end
-        local target = targets[1]
-        local myChar = LocalPlayer.Character
-        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-        if myRoot and target.hrp then
-            local lookPos = Vector3.new(target.hrp.Position.X, myRoot.Position.Y, target.hrp.Position.Z)
-            myRoot.CFrame = CFrame.new(myRoot.Position, lookPos)
-        end
-        return target
-    end
-    
-    local isParrying = false
-    local lastParryTime = 0
-    local attackDetected = false
-    local detectionTimer = 0
-    
-    RunService.RenderStepped:Connect(function(dt)
-        if not Guest1337Settings.Enabled then return end
-        if not isGuest1337() then return end
-        
-        local attacking = isKillerAttacking()
-        if attacking and not attackDetected and not isParrying and (tick() - lastParryTime > 0.5) then
-            attackDetected = true
-            detectionTimer = tick()
-        end
-        
-        if attackDetected and (tick() - detectionTimer >= Guest1337Settings.ParryDelay) then
-            attackDetected = false
-            isParrying = true
-            
-            pressKey(Guest1337Settings.BlockKey)
-            lastParryTime = tick()
-            
-            task.wait(Guest1337Settings.PunchAfterParry)
-            if Guest1337Settings.Enabled then
-                aimAtNearest()
-                task.wait(0.05)
-                pressKey(Guest1337Settings.PunchKey)
-            end
-            isParrying = false
-        end
-    end)
-end)
