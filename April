@@ -1211,7 +1211,7 @@ new:AddButton({
         
         local faceEnemy = {
             enabled = false,
-            targetType = "杀手",
+            targetType = "Killer",
             autoAim = false
         }
         
@@ -1231,7 +1231,7 @@ new:AddButton({
                         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
                         local myRoot = char.HumanoidRootPart
                         
-                        local targetFolder = faceEnemy.targetType == "杀手" 
+                        local targetFolder = faceEnemy.targetType == "Killer" 
                             and (Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Killers"))
                             or (Workspace:FindFirstChild("Players") and Workspace.Players:FindFirstChild("Survivors"))
                         
@@ -3270,11 +3270,11 @@ LeftGroupBox:AddCheckbox("AutoConnectToggle", {
 })
 
 LeftGroupBox:AddSlider("ConnectionSpeed", {
-   Text = "连线速度",
-   Default = 0.05,
-   Min = 0.001,
-   Max = 0.2,
-   Rounding = 3,
+   Text = "连线速度（秒）",
+   Default = 4,
+   Min = 1,
+   Max = 5,
+   Rounding = 1,
    Compact = false,
    Callback = function(Value)
        ConnectionSpeed = Value
@@ -4492,7 +4492,7 @@ killers.ChildAdded:Connect(function(child)
             deleteNewNoli()
         end
     end
-})
+end)
 
 player.CharacterAdded:Connect(function(newCharacter)
     if isVoidRushCrashed then
@@ -4835,7 +4835,7 @@ local function monitorHighlight(h)
     end
 
     local function triggerSprint()
-        if device == "移动端" then
+        if device == "Mobile" then
             local ok, btn = pcall(getSprintingButton)
             if ok and btn then
                 for i, v in pairs(getconnections(btn.MouseButton1Down)) do
@@ -4931,8 +4931,8 @@ Visual:AddCheckbox("AutoSprintToggle", {
 
 Visual:AddDropdown("DeviceType", {
     Text = "设备",
-    Default = "电脑端",
-    Values = {"移动端", "电脑端"},
+    Default = "PC",
+    Values = {"Mobile", "PC"},
     Callback = function(value)
         device = value
     end
@@ -5252,7 +5252,7 @@ local function updateWatermark()
             frameCounter = 0
         end
 
-        Library:SetWatermark(string.format('April | %d FPS | %d 延迟 ', math.floor(fps), math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())))
+        Library:SetWatermark(string.format('April脚本 | %d FPS | %d ping ', math.floor(fps), math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())))
     end)
 end
 
