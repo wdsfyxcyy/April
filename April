@@ -666,7 +666,7 @@ Services.RunService.RenderStepped:Connect(function()
 end)
 
 local Window = Library:CreateWindow({
-    Title = ' RAYSAKEN',
+    Title = ' AprilScript',
     Footer = 'April脚本｜April脚本｜作者：四月',
     Icon = 114671656594043,
     Center = true,
@@ -899,7 +899,7 @@ new:AddButton({
         end)
         
         Tabs.Misc:Section({Title = "自动狂暴"})
-        Tabs.Misc:Toggle({
+        Tabs.Misc:开启/关闭({
             Title = "自动狂暴 (杀手)",
             Default = ragingPaceEnabled,
             Callback = function(state)
@@ -1000,7 +1000,7 @@ new:AddButton({
             end
         end)
         
-        Tabs.Misc:Toggle({
+        Tabs.Misc:开启/关闭({
             Title = "自动404错误 [不可阻挡]",
             Default = antiAnimEnabled,
             Callback = function(state)
@@ -1129,7 +1129,7 @@ new:AddButton({
             end
         end
         
-        Tabs.Auto_Stun:Toggle({
+        Tabs.Auto_Stun:开启/关闭({
             Title = "自动瞄准",
             Default = false,
             Callback = function(v) chanceAim.active = v end
@@ -1146,7 +1146,7 @@ new:AddButton({
         local AutoFlipCoins = false
         local flipCoinsThread = nil
         
-        Tabs.Auto_Stun:Toggle({
+        Tabs.Auto_Stun:开启/关闭({
             Title = "自动投币 (3)",
             Default = false,
             Callback = function(state)
@@ -1175,7 +1175,7 @@ new:AddButton({
             end
         })
         
-        Tabs.Auto_Stun:Toggle({
+        Tabs.Auto_Stun:开启/关闭({
             Title = "自动投币 (1)",
             Default = false,
             Callback = function(state)
@@ -1217,7 +1217,7 @@ new:AddButton({
         
         local faceEnemyConnection
         
-        Tabs.Random:Toggle({
+        Tabs.Random:开启/关闭({
             Title = "自动面向敌人",
             Default = false,
             Callback = function(state)
@@ -1297,7 +1297,7 @@ new:AddButton({
             myRoot.CFrame = CFrame.new(targetRoot.Position + offset, targetRoot.Position)
         end)
         
-        Tabs.Random:Toggle({
+        Tabs.Random:开启/关闭({
             Title = "环绕玩家",
             Default = false,
             Callback = function(state) orbit.active = state end
@@ -1608,7 +1608,7 @@ new:AddButton({
             end
         })
         
-        Tabs.Actions:Toggle({
+        Tabs.Actions:开启/关闭({
             Title = "启动动作",
             Default = false,
             Callback = function(state)
@@ -1625,7 +1625,7 @@ new:AddButton({
         local fakeDieTrack = nil
         local fakeDieConnection = nil
         
-        Tabs.Actions:Toggle({
+        Tabs.Actions:开启/关闭({
             Title = "假死",
             Default = false,
             Callback = function(state)
@@ -1729,7 +1729,7 @@ new:AddButton({
             end
         end
         
-        Tabs.Actions:Toggle({
+        Tabs.Actions:开启/关闭({
             Title = "隐身",
             Value = false,
             Tooltip = "狗爬隐身",
@@ -1819,7 +1819,7 @@ new:AddButton({
         
         Tabs.SilentAim:Section({Title = "静默自瞄设置"})
         
-        Tabs.SilentAim:Toggle({
+        Tabs.SilentAim:开启/关闭({
             Title = "静默自瞄",
             Default = false,
             Callback = function(state)
@@ -1827,7 +1827,7 @@ new:AddButton({
             end
         })
         
-        Tabs.SilentAim:Toggle({
+        Tabs.SilentAim:开启/关闭({
             Title = "墙体检测",
             Default = false,
             Callback = function(state)
@@ -1835,7 +1835,7 @@ new:AddButton({
             end
         })
         
-        Tabs.SilentAim:Toggle({
+        Tabs.SilentAim:开启/关闭({
             Title = "排除杀手",
             Default = false,
             Callback = function(state)
@@ -1843,7 +1843,7 @@ new:AddButton({
             end
         })
         
-        Tabs.SilentAim:Toggle({
+        Tabs.SilentAim:开启/关闭({
             Title = "排除幸存者",
             Default = false,
             Callback = function(state)
@@ -2018,7 +2018,7 @@ new:AddButton({
         
         Tabs.Player:Section({Title = "前空翻"})
         
-        Tabs.Player:Toggle({
+        Tabs.Player:开启/关闭({
             Title = "显示前空翻按钮",
             Default = false,
             Callback = function(state)
@@ -2207,7 +2207,7 @@ new:AddButton({
         
         Tabs.kill:Section({Title = "Noli"})
         
-        Tabs.kill:Toggle({
+        Tabs.kill:开启/关闭({
             Title = "虚空冲刺自瞄",
             Default = false,
             Callback = function(state)
@@ -2400,7 +2400,7 @@ new:AddButton({
             end
         })
         
-        Tabs.kill:Toggle({
+        Tabs.kill:开启/关闭({
             Title = "群体感染瞄准",
             Default = false,
             Callback = function(state)
@@ -2409,7 +2409,7 @@ new:AddButton({
             end
         })
         
-        Tabs.kill:Toggle({
+        Tabs.kill:开启/关闭({
             Title = "预测移动",
             Default = false,
             Callback = function(state)
@@ -2440,7 +2440,7 @@ new:AddButton({
             hiddenStats = false
         }
         
-        Tabs.Anti:Toggle({
+        Tabs.Anti:开启/关闭({
             Title = "反1x1x1x1弹窗",
             Default = false,
             Callback = function(state)
@@ -2463,7 +2463,7 @@ new:AddButton({
             end
         })
         
-        Tabs.Anti:Toggle({
+        Tabs.Anti:开启/关闭({
             Title = "反生命值错误",
             Default = false,
             Callback = function(state)
@@ -2486,7 +2486,7 @@ new:AddButton({
             end
         })
         
-        Tabs.Anti:Toggle({
+        Tabs.Anti:开启/关闭({
             Title = "反眩晕",
             Default = false,
             Callback = function(state)
@@ -2508,7 +2508,7 @@ new:AddButton({
             end
         })
         
-        Tabs.Anti:Toggle({
+        Tabs.Anti:开启/关闭({
             Title = "反减速",
             Default = false,
             Callback = function(state)
@@ -2531,7 +2531,7 @@ new:AddButton({
             end
         })
         
-        Tabs.Anti:Toggle({
+        Tabs.Anti:开启/关闭({
             Title = "反致盲",
             Default = false,
             Callback = function(state)
@@ -2549,7 +2549,7 @@ new:AddButton({
             end
         })
         
-        Tabs.Anti:Toggle({
+        Tabs.Anti:开启/关闭({
             Title = "反子空间",
             Default = false,
             Callback = function(state)
@@ -2570,7 +2570,7 @@ new:AddButton({
             end
         })
         
-        Tabs.Anti:Toggle({
+        Tabs.Anti:开启/关闭({
             Title = "反脚步声",
             Default = false,
             Callback = function(state)
@@ -2592,7 +2592,7 @@ new:AddButton({
         
         local originalPlayerValues = {}
         
-        Tabs.Anti:Toggle({
+        Tabs.Anti:开启/关闭({
             Title = "反隐藏数据",
             Default = false,
             Callback = function(state)
